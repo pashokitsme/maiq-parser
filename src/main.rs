@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 
+use std::rc::Rc;
+
 use timetable::{Day, Group, Lesson};
 use tokio;
 
@@ -13,8 +15,9 @@ mod utils;
 async fn main() {
   dotenvy::dotenv().unwrap();
   pretty_env_logger::init();
-  let html = fetch(Fetch::Today).await.unwrap();
-  parse(html.as_str());
+  let fetched = fetch(Fetch::Today).await.unwrap();
+  println!("{}", fetched);
+  parse(fetched);
 }
 
 fn test_day() {
@@ -22,10 +25,12 @@ fn test_day() {
   for i in 2..5 {
     let mut lessons = vec![];
     for j in 0..3 {
-      let lesson =
-        Lesson {
-          classroom: format!("{}", 100 + j), name: format!("Пара #{}", j), num: j, teacher: format!("Препод #{}", j)
-        };
+      let lesson = Lesson {
+        classroom: Rc::new(Some(format!("{}", 100 + j))),
+        name: Rc::new(format!("Пара #{}", j)),
+        num: j,
+        teacher: Rc::new(Some(format!("Препод #{}", j))),
+      };
       lessons.push(lesson);
     }
     let group = Group { name: format!("Группа {}", i), lessons };
