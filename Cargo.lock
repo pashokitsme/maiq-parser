@@ -927,6 +927,7 @@ dependencies = [
  "chrono",
  "dotenvy",
  "env_logger 0.10.0",
+ "lazy_static",
  "log 0.4.17",
  "logger",
  "pretty-sha2",

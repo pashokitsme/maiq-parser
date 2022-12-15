@@ -10,6 +10,7 @@ aho-corasick = "0.7.20"
 chrono = { version = "0.4.23", features = ["serde"] }
 dotenvy = "0.15.6"
 env_logger = "0.10.0"
+lazy_static = "1.4.0"
 log = "0.4.17"
 logger = "0.4.0"
 pretty-sha2 = "0.1.5"
@@ -17,7 +18,7 @@ pretty_env_logger = "0.4.0"
 regex = "1.7.0"
 reqwest = { version = "0.11.13", features = ["serde_json"] }
 scraper = "0.13.0"
-serde = { version = "1.0.149", features = ["derive"] }
+serde = { version = "1.0.149", features = ["derive", "rc"] }
 serde_json = "1.0.89"
 sha2 = "0.10.6"
 stopwatch = "0.0.7"

@@ -1,106 +1,138 @@
-use aho_corasick::AhoCorasickBuilder;
+use aho_corasick::{AhoCorasick, AhoCorasickBuilder};
+
+use regex::Regex;
 use scraper::Html;
 use std::fmt::Display;
+use std::rc::Rc;
+use std::time::Duration;
+use stopwatch::Stopwatch;
+use table_extract::Row;
 
+use crate::timetable::Lesson;
+
+#[derive(Debug)]
 pub enum Fetch {
   Today,
   Tomorrow,
 }
 
-impl Display for Fetch {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    let url = match self {
+impl Fetch {
+  pub fn url(&self) -> &'static str {
+    match self {
       Fetch::Tomorrow => "https://rsp.chemk.org/4korp/tomorrow.htm",
       Fetch::Today => "https://rsp.chemk.org/4korp/today.htm",
-    };
-    f.write_str(url)
+    }
   }
 }
 
-pub async fn fetch(fetch_mode: Fetch) -> Result<String, reqwest::Error> {
-  reqwest::get(fetch_mode.to_string())
-    .await?
-    .text_with_charset("windows-1251")
-    .await
+pub struct Fetched {
+  pub html: String,
+  pub took: Duration,
+  pub etag: String,
+  pub fetch_mode: Fetch,
 }
 
-//todo: use tl crate (currently query selector not working)
-pub fn parse(html: &str) {
-  let table = table_extract::Table::find_first(html).unwrap();
-  let corasick = AhoCorasickBuilder::new()
+impl Display for Fetched {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    f.write_fmt(format_args!(
+      "Get {:?}. HTML: (...{}), etag: {}, took {}ms",
+      self.fetch_mode,
+      self.html.len(),
+      self.etag,
+      self.took.as_millis()
+    ))
+  }
+}
+
+pub async fn fetch<'a>(fetch_mode: Fetch) -> Result<Fetched, reqwest::Error> {
+  let mut watch = Stopwatch::start_new();
+  let res = reqwest::get(fetch_mode.url()).await?;
+  let etag = res.headers().get("ETag").unwrap().to_str().unwrap().replace("\"", "");
+  let html = res.text_with_charset("windows-1251").await?;
+  watch.stop();
+  Ok(Fetched { html, took: watch.elapsed(), etag, fetch_mode })
+}
+
+lazy_static::lazy_static! {
+  static ref GROUP_REGEX: Regex = Regex::new(r#"[А-я]{1,2}\d-\d{2}"#).unwrap();
+
+  static ref CORASICK: AhoCorasick = AhoCorasickBuilder::new()
     .ascii_case_insensitive(true)
     .build(&["  ", " ", "\n"]);
-  let replace_with = &[" ", "", ""];
+
+  static ref CORASICK_REPLACE_PATTERNS: [&'static str; 3] = [" ", "", ""];
+}
+
+//todo: use tl crate?
+pub fn parse(fetched: Fetched) {
+  let table = table_extract::Table::find_first(&fetched.html).unwrap();
   for row in table.iter().skip(3) {
-    for cell in row {
-      let cell = Html::parse_fragment(cell.as_str());
-      let cell = corasick.replace_all(&cell.root_element().text().collect::<String>(), replace_with);
-      if cell.is_empty() {
-        continue;
-      }
-      print!("{} | ", cell);
-    }
-    println!()
+    let lesson = parse_lesson(&row);
+    println!("{:#?}", lesson);
   }
-  /*
-    let watch = Stopwatch::start_new();
-    let doc = Html::parse_document(&html);
-    let sel = Selector::parse("body > div > div > table > tbody").unwrap();
-    //? body > div > div > table > tbody > tr:nth-child(33) > td:nth-child(1) > p > b > span
-    let inner_sel = Selector::parse("tr > td > p > b > span").unwrap();
-    for el in doc.select(&sel) {
-      let mut group_index = 0usize;
-      for group_el in el.select(&inner_sel).skip(5) {
-        let text = group_el.text().collect::<String>();
-        if !is_matches_group(&text) {
-          continue;
-        }
-        info!("{}. {}", group_index, text);
-        group_index += 1;
-      }
-    }
-
-    info!("Parsing took: {}ms", watch.elapsed_ms())
-  */
-  /*
-  let dom = tl::parse(html.as_str(), ParserOptions::default()).unwrap();
-  let parser = dom.parser();
-  let elements = dom.query_selector("table.MsoNormalTable > ").unwrap();
-  let count = elements.clone().count();
-  println!("{}", count);
-  for el in elements {
-    let inner = el.get(parser).unwrap().inner_html(parser);
-    println!("{}", &*inner);
-    let dom = tl::parse(&*inner, ParserOptions::default()).unwrap();
-    let inner_parser = dom.parser();
-    let groups = dom.query_selector("td[rowspan] > p > b > span");
-
-    if groups.is_none() {
-      continue;
-    }
-    let groups = groups.unwrap();
-
-    for group in groups {
-      println!("{}", group.get(&inner_parser).unwrap().inner_html(&parser));
-      let group = group.get(&inner_parser);
-      if group.is_none() {
-        continue;
-      }
-      let group = group.unwrap();
-      if group.inner_text(&inner_parser).len() < 4 {
-        continue;
-      }
-    }
-  }
-  */
 }
 
-fn is_matches_group(source: &String) -> bool {
-  source.chars().rev().take(2).all(|c| c >= '0' && c <= '9')
-    && source.chars().rev().nth(2).unwrap_or_default() == '-'
-    && source
-      .chars()
-      .rev()
-      .skip(4)
-      .all(|c| (c >= 'а' && c <= 'я') || (c >= 'А' || c <= 'Я'))
+// #[derive(Debug)]
+// struct ParsedLesson {
+//   pub offset: usize,
+//   pub count: usize,
+//   pub lesson: Lesson,
+// }
+
+fn parse_lesson(row: &Row) -> Vec<Lesson> {
+  let mut row = row.iter().peekable();
+  let mut res = vec![];
+  if text(row.peek().unwrap()).is_empty() {
+    return res;
+  }
+
+  if is_group(&row.peek().unwrap()) {
+    row.next();
+  }
+
+  let nums = text(row.next().unwrap())
+    .split(',')
+    .map(|x| {
+      let x = x.trim();
+      x.parse::<usize>().unwrap()
+    })
+    .collect::<Vec<usize>>();
+
+  let name_n_teacher = text(row.next().unwrap());
+  let classroom = match name_n_teacher.as_str() {
+    "Нет" => Rc::new(None),
+    _ => match row.next() {
+      Some(x) => Rc::new(Some(text(&x.as_str()))),
+      None => Rc::new(None),
+    },
+  };
+
+  let mut name_n_teacher = name_n_teacher.split(',').map(|x| x.trim().to_string());
+  let name = Rc::new(name_n_teacher.next().unwrap());
+  let teacher = Rc::new(name_n_teacher.next());
+
+  for &num in nums.iter() {
+    res.push(Lesson { num, name: Rc::clone(&name), teacher: Rc::clone(&teacher), classroom: Rc::clone(&classroom) });
+  }
+
+  res
 }
+
+fn text(html: &str) -> String {
+  let frag = Html::parse_fragment(html);
+  CORASICK.replace_all(frag.root_element().text().collect::<String>().as_str(), CORASICK_REPLACE_PATTERNS.as_slice())
+}
+
+fn is_group(pattern: &str) -> bool {
+  GROUP_REGEX.is_match(pattern)
+}
+
+// fn is_matches_group(source: &String) -> bool {
+//   source.chars().rev().take(2).all(|c| c >= '0' && c <= '9')
+//     && source.chars().rev().nth(2).unwrap_or_default() == '-'
+//     && source
+//       .chars()
+//       .rev()
+//       .skip(4)
+//       .all(|c| (c >= 'а' && c <= 'я') || (c >= 'А' || c <= 'Я'))
+// }
