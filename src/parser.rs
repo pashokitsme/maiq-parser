@@ -66,56 +66,53 @@ lazy_static::lazy_static! {
 //todo: use tl crate?
 pub fn parse(fetched: Fetched) {
   let table = table_extract::Table::find_first(&fetched.html).unwrap();
+  let mut prev: Option<Lesson> = None;
   for row in table.iter().skip(3) {
-    let lesson = parse_lesson(&row);
-    println!("{:#?}", lesson);
+    let lesson = parse_lesson(&row, &prev);
+    prev = lesson.clone();
+    println!("{:?}", lesson);
   }
 }
 
-// #[derive(Debug)]
-// struct ParsedLesson {
-//   pub offset: usize,
-//   pub count: usize,
-//   pub lesson: Lesson,
-// }
-
-fn parse_lesson(row: &Row) -> Vec<Lesson> {
+fn parse_lesson(row: &Row, prev: &Option<Lesson>) -> Option<Lesson> {
   let mut row = row.iter().peekable();
-  let mut res = vec![];
   if text(row.peek().unwrap()).is_empty() {
-    return res;
+    return None;
   }
 
   if is_group(&row.peek().unwrap()) {
     row.next();
   }
 
-  let nums = text(row.next().unwrap())
-    .split(',')
-    .map(|x| {
-      let x = x.trim();
-      x.parse::<usize>().unwrap()
-    })
-    .collect::<Vec<usize>>();
+  let nums_binding = text(&row.peek().unwrap());
+  let mut nums = nums_binding.split(',');
+  let (num, count) = (nums.next().unwrap(), nums.by_ref().count());
+
+  let num = match num.parse::<usize>().ok() {
+    Some(x) => {
+      row.next();
+      x
+    }
+    None => match prev {
+      Some(x) => x.num,
+      None => return None,
+    },
+  };
 
   let name_n_teacher = text(row.next().unwrap());
   let classroom = match name_n_teacher.as_str() {
-    "Нет" => Rc::new(None),
+    "Нет" => None,
     _ => match row.next() {
-      Some(x) => Rc::new(Some(text(&x.as_str()))),
-      None => Rc::new(None),
+      Some(x) => Some(text(&x.as_str())),
+      None => None,
     },
   };
 
   let mut name_n_teacher = name_n_teacher.split(',').map(|x| x.trim().to_string());
-  let name = Rc::new(name_n_teacher.next().unwrap());
-  let teacher = Rc::new(name_n_teacher.next());
+  let name = name_n_teacher.next().unwrap();
+  let teacher = name_n_teacher.next();
 
-  for &num in nums.iter() {
-    res.push(Lesson { num, name: Rc::clone(&name), teacher: Rc::clone(&teacher), classroom: Rc::clone(&classroom) });
-  }
-
-  res
+  Some(Lesson { num, count, name, teacher: teacher, classroom })
 }
 
 fn text(html: &str) -> String {
@@ -126,13 +123,3 @@ fn text(html: &str) -> String {
 fn is_group(pattern: &str) -> bool {
   GROUP_REGEX.is_match(pattern)
 }
-
-// fn is_matches_group(source: &String) -> bool {
-//   source.chars().rev().take(2).all(|c| c >= '0' && c <= '9')
-//     && source.chars().rev().nth(2).unwrap_or_default() == '-'
-//     && source
-//       .chars()
-//       .rev()
-//       .skip(4)
-//       .all(|c| (c >= 'а' && c <= 'я') || (c >= 'А' || c <= 'Я'))
-// }
