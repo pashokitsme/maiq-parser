@@ -1,22 +1,24 @@
 use chrono::{DateTime, Utc};
-use sha2::{digest::Digest, Sha256, Sha512};
+use serde::Serialize;
+use sha2::{digest::Digest, Sha256};
 
 use crate::utils;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Group {
   pub name: String,
   pub lessons: Vec<Lesson>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Lesson {
   pub num: usize,
   pub name: String,
+  pub teacher: String,
   pub classroom: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Day {
   pub date: DateTime<Utc>,
   pub hash: String,
@@ -24,7 +26,7 @@ pub struct Day {
 }
 
 impl Day {
-  /// date is None = today.
+  //? date is None = today.
   pub fn new(groups: Vec<Group>, date: Option<DateTime<Utc>>) -> Self {
     let date = date.unwrap_or(chrono::Utc::now());
     let hash = Self::get_hash(&groups);
