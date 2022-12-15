@@ -1,7 +1,5 @@
 #![allow(dead_code)]
 
-use std::rc::Rc;
-
 use timetable::{Day, Group, Lesson};
 use tokio;
 
@@ -26,10 +24,11 @@ fn test_day() {
     let mut lessons = vec![];
     for j in 0..3 {
       let lesson = Lesson {
-        classroom: Rc::new(Some(format!("{}", 100 + j))),
-        name: Rc::new(format!("Пара #{}", j)),
+        classroom: Some(format!("{}", 100 + j)),
+        name: format!("Пара #{}", j),
+        count: 1,
         num: j,
-        teacher: Rc::new(Some(format!("Препод #{}", j))),
+        teacher: Some(format!("Препод #{}", j)),
       };
       lessons.push(lesson);
     }

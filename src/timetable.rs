@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 use chrono::{DateTime, Utc};
 use serde::Serialize;
 use sha2::{digest::Digest, Sha256};
@@ -12,12 +10,13 @@ pub struct Group {
   pub lessons: Vec<Lesson>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct Lesson {
   pub num: usize,
-  pub name: Rc<String>,
-  pub teacher: Rc<Option<String>>,
-  pub classroom: Rc<Option<String>>,
+  pub count: usize,
+  pub name: String,
+  pub teacher: Option<String>,
+  pub classroom: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -40,10 +39,11 @@ impl Day {
     for group in groups {
       hasher.update(&group.name);
       for lesson in &group.lessons {
-        hasher.update(&lesson.classroom.as_ref().to_owned().unwrap_or_default());
-        hasher.update(&lesson.teacher.as_ref().to_owned().unwrap_or_default());
+        hasher.update(&lesson.classroom.clone().unwrap_or_default());
+        hasher.update(&lesson.teacher.clone().unwrap_or_default());
         hasher.update(&*lesson.name);
         hasher.update(utils::usize_as_bytes(lesson.num));
+        hasher.update(utils::usize_as_bytes(lesson.count));
       }
     }
 
