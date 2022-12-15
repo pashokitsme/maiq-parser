@@ -76,7 +76,7 @@ pub fn parse(fetched: Fetched) {
 
 fn parse_lesson(row: &Row, prev: &Option<Lesson>) -> Option<Lesson> {
   let mut row = row.iter().peekable();
-  if text(row.peek().unwrap()).is_empty() {
+  if as_text(row.peek().unwrap()).is_empty() {
     return None;
   }
 
@@ -84,9 +84,9 @@ fn parse_lesson(row: &Row, prev: &Option<Lesson>) -> Option<Lesson> {
     row.next();
   }
 
-  let nums_binding = text(&row.peek().unwrap());
+  let nums_binding = as_text(&row.peek().unwrap());
   let mut nums = nums_binding.split(',');
-  let (num, count) = (nums.next().unwrap(), nums.by_ref().count());
+  let (count, num) = (nums.clone().count(), nums.next().unwrap());
 
   let num = match num.parse::<usize>().ok() {
     Some(x) => {
@@ -99,11 +99,11 @@ fn parse_lesson(row: &Row, prev: &Option<Lesson>) -> Option<Lesson> {
     },
   };
 
-  let name_n_teacher = text(row.next().unwrap());
+  let name_n_teacher = as_text(row.next().unwrap());
   let classroom = match name_n_teacher.as_str() {
     "Нет" => None,
     _ => match row.next() {
-      Some(x) => Some(text(&x.as_str())),
+      Some(x) => Some(as_text(&x.as_str())),
       None => None,
     },
   };
@@ -115,7 +115,7 @@ fn parse_lesson(row: &Row, prev: &Option<Lesson>) -> Option<Lesson> {
   Some(Lesson { num, count, name, teacher: teacher, classroom })
 }
 
-fn text(html: &str) -> String {
+fn as_text(html: &str) -> String {
   let frag = Html::parse_fragment(html);
   CORASICK.replace_all(frag.root_element().text().collect::<String>().as_str(), CORASICK_REPLACE_PATTERNS.as_slice())
 }
