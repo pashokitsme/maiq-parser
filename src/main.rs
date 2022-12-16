@@ -15,7 +15,32 @@ async fn main() {
   pretty_env_logger::init();
   let fetched = fetch(Fetch::Tomorrow).await.unwrap();
   println!("{}", fetched);
-  parse(fetched);
+  let day = parse(fetched);
+  print_day(&day)
+}
+
+fn print_day(day: &Day) {
+  println!("{} от {}\n", day.hash, day.date);
+  for group in &day.groups {
+    println!("Группа {}", group.name);
+    for lesson in &group.lessons {
+      for i in 0..lesson.count {
+        if lesson.classroom.is_none() {
+          println!("\t#{} {}", lesson.num + 1, lesson.name);
+          continue;
+        }
+        println!(
+          "\t#{} {} в {}. Преподаватель {}",
+          lesson.num + i,
+          lesson.name,
+          lesson.classroom.as_ref().unwrap_or(&"-".to_string()),
+          lesson.teacher.as_ref().unwrap_or(&"-".to_string())
+        )
+      }
+    }
+
+    println!()
+  }
 }
 
 fn test_day() {
