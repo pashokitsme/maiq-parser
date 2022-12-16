@@ -7,7 +7,7 @@ use std::time::Duration;
 use stopwatch::Stopwatch;
 use table_extract::Row;
 
-use crate::timetable::Lesson;
+use crate::timetable::{Day, Group, Lesson};
 
 #[derive(Debug)]
 pub enum Fetch {
@@ -63,24 +63,34 @@ lazy_static::lazy_static! {
 }
 
 //todo: use tl crate instead table_extract or rewrite it?
-pub fn parse(fetched: Fetched) {
+pub fn parse(fetched: Fetched) -> Day {
   let table = table_extract::Table::find_first(&fetched.html).unwrap();
+  let mut lessons = vec![];
   let mut prev: Option<Lesson> = None;
+  let mut prev_group: Option<String> = None;
   for row in table.iter().skip(3) {
-    let lesson = parse_lesson(&row, &prev);
+    let lesson = parse_lesson(&row, &prev, &prev_group);
+    prev_group = lesson.0.clone();
     prev = lesson.1.clone();
-    println!("{:?}", lesson);
+    if lesson.0.is_some() && lesson.1.is_some() {
+      lessons.push(lesson);
+    }
+    // println!("{:?}", prev);
   }
+
+  let groups = map_lessons(&lessons);
+  println!("{:#?}", groups);
+  Day::new(groups, None)
 }
 
 /// Returns group_name and lesson
-fn parse_lesson(row: &Row, prev: &Option<Lesson>) -> (Option<String>, Option<Lesson>) {
+fn parse_lesson(row: &Row, prev: &Option<Lesson>, prev_group: &Option<String>) -> (Option<String>, Option<Lesson>) {
   let mut row = row.iter().peekable();
   if as_text(row.peek().unwrap()).is_empty() {
     return (None, None);
   }
 
-  let group = if try_get_group(&as_text(row.peek().unwrap())) { Some(as_text(row.next().unwrap())) } else { None };
+  let group = if try_get_group(&as_text(row.peek().unwrap())) { Some(as_text(row.next().unwrap())) } else { prev_group.clone() };
 
   let nums_binding = as_text(&row.peek().unwrap());
   let mut nums = nums_binding.split(',');
@@ -111,6 +121,23 @@ fn parse_lesson(row: &Row, prev: &Option<Lesson>) -> (Option<String>, Option<Les
   let teacher = name_n_teacher.next();
 
   (group, Some(Lesson { num, count, name, teacher, classroom }))
+}
+
+fn map_lessons(vec: &Vec<(Option<String>, Option<Lesson>)>) -> Vec<Group> {
+  let mut res: Vec<Group> = vec![];
+  for (group_name, lesson) in vec {
+    let name = group_name.as_ref().unwrap().as_str().clone();
+    let group = if let Some(x) = res.iter().position(|x| x.name.as_str() == name) {
+      &mut res[x]
+    } else {
+      res.push(Group { name: name.to_string(), lessons: vec![] });
+      res.last_mut().unwrap()
+    };
+
+    group.lessons.push(lesson.clone().unwrap())
+  }
+
+  res
 }
 
 fn as_text(html: &str) -> String {

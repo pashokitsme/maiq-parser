@@ -13,7 +13,7 @@ mod utils;
 async fn main() {
   dotenvy::dotenv().unwrap();
   pretty_env_logger::init();
-  let fetched = fetch(Fetch::Today).await.unwrap();
+  let fetched = fetch(Fetch::Tomorrow).await.unwrap();
   println!("{}", fetched);
   parse(fetched);
 }
