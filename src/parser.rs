@@ -43,7 +43,7 @@ impl Display for Fetched {
   }
 }
 
-pub async fn fetch<'a>(fetch_mode: Fetch) -> Result<Fetched, reqwest::Error> {
+pub async fn fetch(fetch_mode: Fetch) -> Result<Fetched, reqwest::Error> {
   let mut watch = Stopwatch::start_new();
   let res = reqwest::get(fetch_mode.url()).await?;
   let etag = res.headers().get("ETag").unwrap().to_str().unwrap().replace("\"", "");
@@ -63,6 +63,7 @@ lazy_static::lazy_static! {
 }
 
 //todo: use tl crate instead table_extract or rewrite it?
+//todo: subgroup grouping
 pub fn parse(fetched: Fetched) -> Day {
   let table = table_extract::Table::find_first(&fetched.html).unwrap();
   let mut lessons = vec![];
@@ -75,11 +76,9 @@ pub fn parse(fetched: Fetched) -> Day {
     if lesson.0.is_some() && lesson.1.is_some() {
       lessons.push(lesson);
     }
-    // println!("{:?}", prev);
   }
 
-  let groups = map_lessons(&lessons);
-  println!("{:#?}", groups);
+  let groups = map_lessons_to_groups(&lessons);
   Day::new(groups, None)
 }
 
@@ -90,7 +89,7 @@ fn parse_lesson(row: &Row, prev: &Option<Lesson>, prev_group: &Option<String>) -
     return (None, None);
   }
 
-  let group = if try_get_group(&as_text(row.peek().unwrap())) { Some(as_text(row.next().unwrap())) } else { prev_group.clone() };
+  let group = if is_group(&as_text(row.peek().unwrap())) { Some(as_text(row.next().unwrap())) } else { prev_group.clone() };
 
   let nums_binding = as_text(&row.peek().unwrap());
   let mut nums = nums_binding.split(',');
@@ -123,7 +122,7 @@ fn parse_lesson(row: &Row, prev: &Option<Lesson>, prev_group: &Option<String>) -
   (group, Some(Lesson { num, count, name, teacher, classroom }))
 }
 
-fn map_lessons(vec: &Vec<(Option<String>, Option<Lesson>)>) -> Vec<Group> {
+fn map_lessons_to_groups(vec: &Vec<(Option<String>, Option<Lesson>)>) -> Vec<Group> {
   let mut res: Vec<Group> = vec![];
   for (group_name, lesson) in vec {
     let name = group_name.as_ref().unwrap().as_str().clone();
@@ -145,6 +144,6 @@ fn as_text(html: &str) -> String {
   CORASICK.replace_all(frag.root_element().text().collect::<String>().as_str(), CORASICK_REPLACE_PATTERNS.as_slice())
 }
 
-fn try_get_group(pattern: &str) -> bool {
+fn is_group(pattern: &str) -> bool {
   GROUP_REGEX.is_match(pattern)
 }
