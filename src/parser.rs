@@ -3,7 +3,6 @@ use aho_corasick::{AhoCorasick, AhoCorasickBuilder};
 use regex::Regex;
 use scraper::Html;
 use std::fmt::Display;
-use std::rc::Rc;
 use std::time::Duration;
 use stopwatch::Stopwatch;
 use table_extract::Row;
@@ -63,26 +62,25 @@ lazy_static::lazy_static! {
   static ref CORASICK_REPLACE_PATTERNS: [&'static str; 3] = [" ", "", ""];
 }
 
-//todo: use tl crate?
+//todo: use tl crate instead table_extract or rewrite it?
 pub fn parse(fetched: Fetched) {
   let table = table_extract::Table::find_first(&fetched.html).unwrap();
   let mut prev: Option<Lesson> = None;
   for row in table.iter().skip(3) {
     let lesson = parse_lesson(&row, &prev);
-    prev = lesson.clone();
+    prev = lesson.1.clone();
     println!("{:?}", lesson);
   }
 }
 
-fn parse_lesson(row: &Row, prev: &Option<Lesson>) -> Option<Lesson> {
+/// Returns group_name and lesson
+fn parse_lesson(row: &Row, prev: &Option<Lesson>) -> (Option<String>, Option<Lesson>) {
   let mut row = row.iter().peekable();
   if as_text(row.peek().unwrap()).is_empty() {
-    return None;
+    return (None, None);
   }
 
-  if is_group(&row.peek().unwrap()) {
-    row.next();
-  }
+  let group = if try_get_group(&as_text(row.peek().unwrap())) { Some(as_text(row.next().unwrap())) } else { None };
 
   let nums_binding = as_text(&row.peek().unwrap());
   let mut nums = nums_binding.split(',');
@@ -95,7 +93,7 @@ fn parse_lesson(row: &Row, prev: &Option<Lesson>) -> Option<Lesson> {
     }
     None => match prev {
       Some(x) => x.num,
-      None => return None,
+      None => return (group, None),
     },
   };
 
@@ -112,7 +110,7 @@ fn parse_lesson(row: &Row, prev: &Option<Lesson>) -> Option<Lesson> {
   let name = name_n_teacher.next().unwrap();
   let teacher = name_n_teacher.next();
 
-  Some(Lesson { num, count, name, teacher: teacher, classroom })
+  (group, Some(Lesson { num, count, name, teacher, classroom }))
 }
 
 fn as_text(html: &str) -> String {
@@ -120,6 +118,6 @@ fn as_text(html: &str) -> String {
   CORASICK.replace_all(frag.root_element().text().collect::<String>().as_str(), CORASICK_REPLACE_PATTERNS.as_slice())
 }
 
-fn is_group(pattern: &str) -> bool {
+fn try_get_group(pattern: &str) -> bool {
   GROUP_REGEX.is_match(pattern)
 }
