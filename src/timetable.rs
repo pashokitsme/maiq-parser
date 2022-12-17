@@ -4,7 +4,7 @@ use sha2::{digest::Digest, Sha256};
 
 use crate::utils;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct Group {
   pub name: String,
   pub lessons: Vec<Lesson>,
@@ -20,7 +20,7 @@ pub struct Lesson {
   pub classroom: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct Day {
   pub date: NaiveDate,
   pub hash: String,
@@ -42,7 +42,8 @@ impl Day {
       for lesson in &group.lessons {
         hasher.update(&lesson.classroom.clone().unwrap_or_default());
         hasher.update(&lesson.teacher.clone().unwrap_or_default());
-        hasher.update(&*lesson.name);
+        hasher.update(&lesson.name);
+        hasher.update(utils::usize_as_bytes(lesson.subgroup.unwrap_or(0)));
         hasher.update(utils::usize_as_bytes(lesson.num));
         hasher.update(utils::usize_as_bytes(lesson.count));
       }
