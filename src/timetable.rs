@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use chrono::NaiveDate;
 use serde::Serialize;
 use sha2::{digest::Digest, Sha256};
 
@@ -22,15 +22,15 @@ pub struct Lesson {
 
 #[derive(Debug, Serialize)]
 pub struct Day {
-  pub date: DateTime<Utc>,
+  pub date: NaiveDate,
   pub hash: String,
   pub groups: Vec<Group>,
 }
 
 impl Day {
   //? date is None = today.
-  pub fn new(groups: Vec<Group>, date: Option<DateTime<Utc>>) -> Self {
-    let date = date.unwrap_or(chrono::Utc::now());
+  pub fn new(groups: Vec<Group>, date: Option<NaiveDate>) -> Self {
+    let date = date.unwrap_or(chrono::Utc::now().date_naive());
     let hash = Self::get_hash(&groups);
     Self { date, hash, groups }
   }

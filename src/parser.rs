@@ -7,13 +7,8 @@ use table_extract::Row;
 use crate::{
   fetch::Fetched,
   timetable::{Day, Group, Lesson},
+  ParserError,
 };
-
-#[derive(thiserror::Error, Debug)]
-pub enum ParserError {
-  #[error("Расписания ещё нет")]
-  NotYet,
-}
 
 #[derive(Clone)]
 struct ParsedLesson {
@@ -32,7 +27,7 @@ lazy_static::lazy_static! {
 }
 
 //todo: use tl crate instead table_extract or rewrite it?
-pub fn parse(fetched: Fetched) -> Result<Day, ParserError> {
+pub async fn parse(fetched: &Fetched) -> Result<Day, ParserError> {
   let table = match table_extract::Table::find_first(&fetched.html) {
     Some(x) => x,
     None => return Err(ParserError::NotYet),
@@ -51,7 +46,6 @@ pub fn parse(fetched: Fetched) -> Result<Day, ParserError> {
   Ok(Day::new(groups, None))
 }
 
-/// Returns group_name and lesson
 fn parse_lesson(row: &Row, prev: &Option<ParsedLesson>) -> Option<ParsedLesson> {
   let mut row = row.iter().peekable();
   if as_text(row.peek().unwrap()).is_empty() {
