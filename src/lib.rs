@@ -1,13 +1,15 @@
+pub use fetch::{fetch, Fetch, Fetched};
+pub use parser::parse;
+
 use chrono::{DateTime, Utc};
 use error::ParserError;
-use fetch::{fetch, Fetch, Fetched};
-use parser::parse;
 use timetable::Day;
 
 pub mod error;
 pub mod fetch;
 pub mod parser;
 pub mod timetable;
+
 mod utils;
 
 pub struct ParsedDay {

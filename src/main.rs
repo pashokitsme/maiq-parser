@@ -1,4 +1,4 @@
-use maiq::{
+use maiq_parser::{
   fetch::{fetch, Fetch},
   parser::parse,
   timetable::Day,
