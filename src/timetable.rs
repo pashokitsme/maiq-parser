@@ -15,6 +15,7 @@ pub struct Lesson {
   pub num: usize,
   pub count: usize,
   pub name: String,
+  pub subgroup: Option<usize>,
   pub teacher: Option<String>,
   pub classroom: Option<String>,
 }

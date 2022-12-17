@@ -2,54 +2,23 @@ use aho_corasick::{AhoCorasick, AhoCorasickBuilder};
 
 use regex::Regex;
 use scraper::Html;
-use std::fmt::Display;
-use std::time::Duration;
-use stopwatch::Stopwatch;
 use table_extract::Row;
 
-use crate::timetable::{Day, Group, Lesson};
+use crate::{
+  fetch::Fetched,
+  timetable::{Day, Group, Lesson},
+};
 
-#[derive(Debug)]
-pub enum Fetch {
-  Today,
-  Tomorrow,
+#[derive(thiserror::Error, Debug)]
+pub enum ParserError {
+  #[error("Расписания ещё нет")]
+  NotYet,
 }
 
-impl Fetch {
-  pub fn url(&self) -> &'static str {
-    match self {
-      Fetch::Tomorrow => "https://rsp.chemk.org/4korp/tomorrow.htm",
-      Fetch::Today => "https://rsp.chemk.org/4korp/today.htm",
-    }
-  }
-}
-
-pub struct Fetched {
-  pub html: String,
-  pub took: Duration,
-  pub etag: String,
-  pub fetch_mode: Fetch,
-}
-
-impl Display for Fetched {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    f.write_fmt(format_args!(
-      "Get {:?}. HTML: (...{}), etag: {}, took {}ms",
-      self.fetch_mode,
-      self.html.len(),
-      self.etag,
-      self.took.as_millis()
-    ))
-  }
-}
-
-pub async fn fetch(fetch_mode: Fetch) -> Result<Fetched, reqwest::Error> {
-  let mut watch = Stopwatch::start_new();
-  let res = reqwest::get(fetch_mode.url()).await?;
-  let etag = res.headers().get("ETag").unwrap().to_str().unwrap().replace("\"", "");
-  let html = res.text_with_charset("windows-1251").await?;
-  watch.stop();
-  Ok(Fetched { html, took: watch.elapsed(), etag, fetch_mode })
+#[derive(Clone)]
+struct ParsedLesson {
+  pub group: String,
+  pub lesson: Lesson,
 }
 
 lazy_static::lazy_static! {
@@ -63,33 +32,45 @@ lazy_static::lazy_static! {
 }
 
 //todo: use tl crate instead table_extract or rewrite it?
-//todo: subgroup grouping
-pub fn parse(fetched: Fetched) -> Day {
-  let table = table_extract::Table::find_first(&fetched.html).unwrap();
+pub fn parse(fetched: Fetched) -> Result<Day, ParserError> {
+  let table = match table_extract::Table::find_first(&fetched.html) {
+    Some(x) => x,
+    None => return Err(ParserError::NotYet),
+  };
   let mut lessons = vec![];
-  let mut prev: Option<Lesson> = None;
-  let mut prev_group: Option<String> = None;
+  let mut prev: Option<ParsedLesson> = None;
   for row in table.iter().skip(3) {
-    let lesson = parse_lesson(&row, &prev, &prev_group);
-    prev_group = lesson.0.clone();
-    prev = lesson.1.clone();
-    if lesson.0.is_some() && lesson.1.is_some() {
-      lessons.push(lesson);
+    let lesson = parse_lesson(&row, &prev);
+    prev = lesson.clone();
+    if lesson.is_some() {
+      lessons.push(lesson.unwrap());
     }
   }
 
   let groups = map_lessons_to_groups(&lessons);
-  Day::new(groups, None)
+  Ok(Day::new(groups, None))
 }
 
 /// Returns group_name and lesson
-fn parse_lesson(row: &Row, prev: &Option<Lesson>, prev_group: &Option<String>) -> (Option<String>, Option<Lesson>) {
+fn parse_lesson(row: &Row, prev: &Option<ParsedLesson>) -> Option<ParsedLesson> {
   let mut row = row.iter().peekable();
   if as_text(row.peek().unwrap()).is_empty() {
-    return (None, None);
+    return None;
   }
 
-  let group = if is_group(&as_text(row.peek().unwrap())) { Some(as_text(row.next().unwrap())) } else { prev_group.clone() };
+  let (group, subgroup) = if is_group(&as_text(row.peek().unwrap())) {
+    let group_n_subgroup = as_text(row.next().unwrap());
+    let mut group_n_subgroup = group_n_subgroup.split(' ');
+    let group = group_n_subgroup.next().unwrap().trim();
+    let subgroup = match group_n_subgroup.next() {
+      Some(x) => Some(x.trim().parse::<usize>().unwrap()),
+      None => None,
+    };
+    (group.to_string(), subgroup.clone())
+  } else {
+    let cloned = prev.clone().unwrap();
+    (cloned.group, cloned.lesson.subgroup)
+  };
 
   let nums_binding = as_text(&row.peek().unwrap());
   let mut nums = nums_binding.split(',');
@@ -101,8 +82,8 @@ fn parse_lesson(row: &Row, prev: &Option<Lesson>, prev_group: &Option<String>) -
       x
     }
     None => match prev {
-      Some(x) => x.num,
-      None => return (group, None),
+      Some(x) => x.lesson.num,
+      None => return None,
     },
   };
 
@@ -119,13 +100,13 @@ fn parse_lesson(row: &Row, prev: &Option<Lesson>, prev_group: &Option<String>) -
   let name = name_n_teacher.next().unwrap();
   let teacher = name_n_teacher.next();
 
-  (group, Some(Lesson { num, count, name, teacher, classroom }))
+  Some(ParsedLesson { group, lesson: Lesson { num, count, name, subgroup, teacher, classroom } })
 }
 
-fn map_lessons_to_groups(vec: &Vec<(Option<String>, Option<Lesson>)>) -> Vec<Group> {
+fn map_lessons_to_groups(vec: &Vec<ParsedLesson>) -> Vec<Group> {
   let mut res: Vec<Group> = vec![];
-  for (group_name, lesson) in vec {
-    let name = group_name.as_ref().unwrap().as_str().clone();
+  for lesson in vec {
+    let name = lesson.group.as_str().clone();
     let group = if let Some(x) = res.iter().position(|x| x.name.as_str() == name) {
       &mut res[x]
     } else {
@@ -133,7 +114,7 @@ fn map_lessons_to_groups(vec: &Vec<(Option<String>, Option<Lesson>)>) -> Vec<Gro
       res.last_mut().unwrap()
     };
 
-    group.lessons.push(lesson.clone().unwrap())
+    group.lessons.push(lesson.lesson.clone())
   }
 
   res

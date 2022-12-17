@@ -1,10 +1,12 @@
-#![allow(dead_code)]
-
 use timetable::{Day, Group, Lesson};
 use tokio;
 
-use crate::parser::{fetch, parse, Fetch};
+use crate::{
+  fetch::{fetch, Fetch},
+  parser::parse,
+};
 
+mod fetch;
 mod parser;
 mod timetable;
 mod utils;
@@ -13,9 +15,13 @@ mod utils;
 async fn main() {
   dotenvy::dotenv().unwrap();
   pretty_env_logger::init();
-  let fetched = fetch(Fetch::Tomorrow).await.unwrap();
+  let fetched = fetch(Fetch::Today).await.unwrap();
   println!("{}", fetched);
-  let day = parse(fetched);
+  let day = match parse(fetched) {
+    Ok(x) => x,
+    Err(x) => return println!("Ошибка: {}", x),
+  };
+
   print_day(&day)
 }
 
@@ -29,8 +35,12 @@ fn print_day(day: &Day) {
           println!("\t#{} {}", lesson.num + 1, lesson.name);
           continue;
         }
+        print!("\t");
+        if let Some(sub) = lesson.subgroup {
+          print!("Подгруппа {} ", sub)
+        }
         println!(
-          "\t#{} {} в {}. Преподаватель {}",
+          "#{} {} в {}. Преподаватель {}",
           lesson.num + i,
           lesson.name,
           lesson.classroom.as_ref().unwrap_or(&"-".to_string()),
@@ -51,6 +61,7 @@ fn test_day() {
       let lesson = Lesson {
         classroom: Some(format!("{}", 100 + j)),
         name: format!("Пара #{}", j),
+        subgroup: Some(0),
         count: 1,
         num: j,
         teacher: Some(format!("Препод #{}", j)),
