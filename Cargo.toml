@@ -30,3 +30,12 @@ thiserror = "1.0.37"
 #todo replace with tl
 scraper = "0.13.0"
 table-extract = "0.2.2"
+
+#feature's dep
+tokio = { version = "1.23.0", features = ["macros", "rt-multi-thread"], optional = true }
+
+[features]
+main_fn = ["dep:tokio"]
+
+[dev-dependencies]
+
