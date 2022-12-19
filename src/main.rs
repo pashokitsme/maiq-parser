@@ -1,7 +1,7 @@
 // use maiq_parser::{
 //   fetch::{fetch, Fetch},
 //   parser::parse,
-//   timetable::{Day, LessonKind},
+//   timetable::Day,
 // };
 
 // #[tokio::main]
@@ -22,25 +22,21 @@
 //   for group in &day.groups {
 //     println!("Группа {}", group.name);
 //     for lesson in &group.lessons {
-//       print!("\t");
-//       match lesson.kind {
-//         LessonKind::None => println!("#{} Нет", lesson.num),
-//         LessonKind::Default => println!("#{} По расписанию", lesson.num),
-//         LessonKind::Some => {
-//           if let Some(sub) = lesson.subgroup {
-//             print!("Подгруппа {} ", sub)
-//           }
-//           println!(
-//             "#{} {} в {}. Преподаватель {}",
-//             lesson.num,
-//             lesson.name.as_ref().unwrap(),
-//             lesson.classroom.as_ref().unwrap_or(&"-".to_string()),
-//             lesson.teacher.as_ref().unwrap_or(&"-".to_string())
-//           )
-//         }
+//       print!("\t#{} ", lesson.num);
+//       if let Some(sub) = lesson.subgroup {
+//         print!(" (п. {}) ", sub)
 //       }
-//     }
+//       print!("{} ", lesson.name);
 
+//       if let Some(classroom) = lesson.classroom.as_ref() {
+//         print!(" в {}", classroom);
+//       }
+
+//       if let Some(teacher) = lesson.teacher.as_ref() {
+//         print!(". Преподаватель: {}", teacher)
+//       }
+//       println!()
+//     }
 //     println!()
 //   }
 // }

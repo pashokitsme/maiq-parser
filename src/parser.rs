@@ -6,7 +6,7 @@ use table_extract::Row;
 
 use crate::{
   fetch::Fetched,
-  timetable::{Day, Group, Lesson, LessonKind},
+  timetable::{Day, Group, Lesson},
   ParserError,
 };
 
@@ -86,7 +86,10 @@ fn parse_lesson(row: &Row, prev: &Option<ParsedLesson>) -> Result<Option<ParsedL
   let classroom = match name_n_teacher.as_str() {
     "Нет" => None,
     _ => match row.next() {
-      Some(x) => Some(as_text(&x.as_str())),
+      Some(x) => match as_text(&x.as_str()).as_str() {
+        "" => None,
+        x => Some(x.to_string()),
+      },
       None => None,
     },
   };
@@ -95,13 +98,7 @@ fn parse_lesson(row: &Row, prev: &Option<ParsedLesson>) -> Result<Option<ParsedL
   let name = name_n_teacher.next().unwrap();
   let teacher = name_n_teacher.next();
 
-  let (kind, name) = match name.as_str() {
-    "Нет" => (LessonKind::None, None),
-    "По расписанию" => (LessonKind::Default, None),
-    _ => (LessonKind::Some, Some(name)),
-  };
-
-  Ok(Some(ParsedLesson { group, nums, lesson: Lesson { num: 0, kind, name, subgroup, teacher, classroom } }))
+  Ok(Some(ParsedLesson { group, nums, lesson: Lesson { num: 0, name, subgroup, teacher, classroom } }))
 }
 
 fn map_lessons_to_groups(vec: &Vec<ParsedLesson>) -> Vec<Group> {
