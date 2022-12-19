@@ -6,13 +6,14 @@ use table_extract::Row;
 
 use crate::{
   fetch::Fetched,
-  timetable::{Day, Group, Lesson},
+  timetable::{Day, Group, Lesson, LessonKind},
   ParserError,
 };
 
 #[derive(Clone)]
 struct ParsedLesson {
   pub group: String,
+  pub nums: Vec<usize>,
   pub lesson: Lesson,
 }
 
@@ -67,20 +68,19 @@ fn parse_lesson(row: &Row, prev: &Option<ParsedLesson>) -> Result<Option<ParsedL
     (cloned.group, cloned.lesson.subgroup)
   };
 
-  let nums_binding = as_text(&row.peek().unwrap());
-  let mut nums = nums_binding.split(',');
-  let (count, num) = (nums.clone().count(), nums.next().unwrap());
+  let nums_binding = as_text(&row.next().unwrap());
 
-  let num = match num.parse::<usize>().ok() {
-    Some(x) => {
-      row.next();
-      x
-    }
-    None => match prev {
-      Some(x) => x.lesson.num,
-      None => return Ok(None),
-    },
-  };
+  let mut nums: Vec<usize> = vec![];
+  for num in nums_binding.split(',') {
+    let num = match num.parse::<usize>().ok() {
+      Some(x) => x,
+      None => match prev {
+        Some(x) => x.lesson.num,
+        None => return Ok(None),
+      },
+    };
+    nums.push(num);
+  }
 
   let name_n_teacher = as_text(row.next().unwrap());
   let classroom = match name_n_teacher.as_str() {
@@ -95,23 +95,39 @@ fn parse_lesson(row: &Row, prev: &Option<ParsedLesson>) -> Result<Option<ParsedL
   let name = name_n_teacher.next().unwrap();
   let teacher = name_n_teacher.next();
 
-  Ok(Some(ParsedLesson { group, lesson: Lesson { num, count, name, subgroup, teacher, classroom } }))
+  let (kind, name) = match name.as_str() {
+    "Нет" => (LessonKind::None, None),
+    "По расписанию" => (LessonKind::Default, None),
+    _ => (LessonKind::Some, Some(name)),
+  };
+
+  Ok(Some(ParsedLesson { group, nums, lesson: Lesson { num: 0, kind, name, subgroup, teacher, classroom } }))
 }
 
 fn map_lessons_to_groups(vec: &Vec<ParsedLesson>) -> Vec<Group> {
   let mut res: Vec<Group> = vec![];
   for lesson in vec {
-    let name = lesson.group.as_str().clone();
-    let group = if let Some(x) = res.iter().position(|x| x.name.as_str() == name) {
-      &mut res[x]
-    } else {
-      res.push(Group { name: name.to_string(), lessons: vec![] });
-      res.last_mut().unwrap()
-    };
+    for num in &lesson.nums {
+      let name = lesson.group.as_str().clone();
+      let group = if let Some(x) = res.iter().position(|x| x.name.as_str() == name) {
+        &mut res[x]
+      } else {
+        res.push(Group { name: name.to_string(), lessons: vec![] });
+        res.last_mut().unwrap()
+      };
 
-    group.lessons.push(lesson.lesson.clone())
+      if *num < 1 {
+        continue;
+      }
+
+      let mut lesson = lesson.lesson.clone();
+      lesson.num = *num;
+
+      group.lessons.push(lesson)
+    }
   }
 
+  res.iter_mut().for_each(|g| g.lessons.sort_by_key(|k| k.num));
   res
 }
 
