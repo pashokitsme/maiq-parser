@@ -11,10 +11,17 @@ pub struct Group {
 }
 
 #[derive(Debug, Serialize, Clone)]
+pub enum LessonKind {
+  None,
+  Some,
+  Default,
+}
+
+#[derive(Debug, Serialize, Clone)]
 pub struct Lesson {
   pub num: usize,
-  pub count: usize,
-  pub name: String,
+  pub kind: LessonKind,
+  pub name: Option<String>,
   pub subgroup: Option<usize>,
   pub teacher: Option<String>,
   pub classroom: Option<String>,
@@ -23,7 +30,7 @@ pub struct Lesson {
 #[derive(Debug, Serialize, Clone)]
 pub struct Day {
   pub date: NaiveDate,
-  pub hash: String,
+  pub uid: String,
   pub groups: Vec<Group>,
 }
 
@@ -32,7 +39,7 @@ impl Day {
   pub fn new(groups: Vec<Group>, date: Option<NaiveDate>) -> Self {
     let date = date.unwrap_or(chrono::Utc::now().date_naive());
     let hash = Self::get_hash(&groups);
-    Self { date, hash, groups }
+    Self { date, uid: hash, groups }
   }
 
   fn get_hash(groups: &Vec<Group>) -> String {
@@ -42,10 +49,9 @@ impl Day {
       for lesson in &group.lessons {
         hasher.update(&lesson.classroom.clone().unwrap_or_default());
         hasher.update(&lesson.teacher.clone().unwrap_or_default());
-        hasher.update(&lesson.name);
+        hasher.update(&lesson.name.clone().unwrap_or_default());
         hasher.update(utils::usize_as_bytes(lesson.subgroup.unwrap_or(0)));
         hasher.update(utils::usize_as_bytes(lesson.num));
-        hasher.update(utils::usize_as_bytes(lesson.count));
       }
     }
 
