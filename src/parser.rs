@@ -27,7 +27,8 @@ lazy_static::lazy_static! {
   static ref CORASICK_REPLACE_PATTERNS: [&'static str; 3] = [" ", "", ""];
 }
 
-//todo: use tl crate instead table_extract or rewrite it?
+// todo: use tl crate instead table_extract or rewrite it?
+// todo: parse row and then use it instead parse parts of it
 pub async fn parse(fetched: &Fetched) -> Result<Day, ParserError> {
   let table = match table_extract::Table::find_first(&fetched.html) {
     Some(x) => x,
@@ -105,6 +106,10 @@ fn map_lessons_to_groups(vec: &Vec<ParsedLesson>) -> Vec<Group> {
   let mut res: Vec<Group> = vec![];
   for lesson in vec {
     for num in &lesson.nums {
+      if *num < 1 {
+        continue;
+      }
+
       let name = lesson.group.as_str().clone();
       let group = if let Some(x) = res.iter().position(|x| x.name.as_str() == name) {
         &mut res[x]
@@ -112,10 +117,6 @@ fn map_lessons_to_groups(vec: &Vec<ParsedLesson>) -> Vec<Group> {
         res.push(Group { name: name.to_string(), lessons: vec![] });
         res.last_mut().unwrap()
       };
-
-      if *num < 1 {
-        continue;
-      }
 
       let mut lesson = lesson.lesson.clone();
       lesson.num = *num;
