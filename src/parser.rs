@@ -35,9 +35,9 @@ pub async fn parse(fetched: &Fetched) -> Result<Day, ParserError> {
   let mut lessons = vec![];
   let mut prev: Option<ParsedLesson> = None;
   for row in table.iter().skip(3) {
-    let lesson = parse_lesson(&row, &prev);
-    prev = lesson.clone();
+    let lesson = parse_lesson(&row, &prev)?;
     if lesson.is_some() {
+      prev = lesson.clone();
       lessons.push(lesson.unwrap());
     }
   }
@@ -46,10 +46,10 @@ pub async fn parse(fetched: &Fetched) -> Result<Day, ParserError> {
   Ok(Day::new(groups, None))
 }
 
-fn parse_lesson(row: &Row, prev: &Option<ParsedLesson>) -> Option<ParsedLesson> {
+fn parse_lesson(row: &Row, prev: &Option<ParsedLesson>) -> Result<Option<ParsedLesson>, ParserError> {
   let mut row = row.iter().peekable();
   if as_text(row.peek().unwrap()).is_empty() {
-    return None;
+    return Ok(None);
   }
 
   let (group, subgroup) = if is_group(&as_text(row.peek().unwrap())) {
@@ -57,7 +57,7 @@ fn parse_lesson(row: &Row, prev: &Option<ParsedLesson>) -> Option<ParsedLesson> 
     let mut group_n_subgroup = group_n_subgroup.split(' ');
     let group = group_n_subgroup.next().unwrap().trim();
     let subgroup = match group_n_subgroup.next() {
-      Some(x) => Some(x.trim().parse::<usize>().unwrap()),
+      Some(x) => Some(x.trim().parse::<usize>()?),
       None => None,
     };
     (group.to_string(), subgroup.clone())
@@ -77,7 +77,7 @@ fn parse_lesson(row: &Row, prev: &Option<ParsedLesson>) -> Option<ParsedLesson> 
     }
     None => match prev {
       Some(x) => x.lesson.num,
-      None => return None,
+      None => return Ok(None),
     },
   };
 
@@ -94,7 +94,7 @@ fn parse_lesson(row: &Row, prev: &Option<ParsedLesson>) -> Option<ParsedLesson> 
   let name = name_n_teacher.next().unwrap();
   let teacher = name_n_teacher.next();
 
-  Some(ParsedLesson { group, lesson: Lesson { num, count, name, subgroup, teacher, classroom } })
+  Ok(Some(ParsedLesson { group, lesson: Lesson { num, count, name, subgroup, teacher, classroom } }))
 }
 
 fn map_lessons_to_groups(vec: &Vec<ParsedLesson>) -> Vec<Group> {
