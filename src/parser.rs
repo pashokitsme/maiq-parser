@@ -48,16 +48,17 @@ pub async fn parse(fetched: &Fetched) -> Result<Day, ParserError> {
 
 fn parse_lesson(row: &Row, prev: &Option<ParsedLesson>) -> Result<Option<ParsedLesson>, ParserError> {
   let mut row = row.iter().peekable();
+  // println!("{}", row.clone().map(|x| as_text(x)).collect::<String>());
   if as_text(row.peek().unwrap()).is_empty() {
     return Ok(None);
   }
 
   let (group, subgroup) = if is_group(&as_text(row.peek().unwrap())) {
     let group_n_subgroup = as_text(row.next().unwrap());
-    let mut group_n_subgroup = group_n_subgroup.split(' ');
+    let mut group_n_subgroup = group_n_subgroup.split(&[' ', ' ']);
     let group = group_n_subgroup.next().unwrap().trim();
     let subgroup = match group_n_subgroup.next() {
-      Some(x) => Some(x.trim().parse::<usize>()?),
+      Some(x) => x.trim().parse::<usize>().ok(),
       None => None,
     };
     (group.to_string(), subgroup.clone())
