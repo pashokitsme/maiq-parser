@@ -3,7 +3,7 @@ pub use parser::parse;
 
 use chrono::{DateTime, Utc};
 use error::ParserError;
-use timetable::Day;
+use timetable::Snapshot;
 
 pub mod error;
 pub mod fetch;
@@ -14,7 +14,7 @@ mod utils;
 
 pub struct ParsedDay {
   pub fetched: Fetched,
-  pub day: Day,
+  pub day: Snapshot,
   pub date: DateTime<Utc>,
 }
 

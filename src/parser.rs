@@ -6,7 +6,7 @@ use table_extract::Row;
 
 use crate::{
   fetch::Fetched,
-  timetable::{Day, Group, Lesson},
+  timetable::{Group, Lesson, Snapshot},
   ParserError,
 };
 
@@ -29,7 +29,7 @@ lazy_static::lazy_static! {
 
 // todo: use tl crate instead table_extract or rewrite it?
 // todo: parse row and then use it instead parse parts of it
-pub async fn parse(fetched: &Fetched) -> Result<Day, ParserError> {
+pub async fn parse(fetched: &Fetched) -> Result<Snapshot, ParserError> {
   let table = match table_extract::Table::find_first(&fetched.html) {
     Some(x) => x,
     None => return Err(ParserError::NotYet),
@@ -45,7 +45,7 @@ pub async fn parse(fetched: &Fetched) -> Result<Day, ParserError> {
   }
 
   let groups = map_lessons_to_groups(&lessons);
-  Ok(Day::new(groups, None))
+  Ok(Snapshot::new(groups, None))
 }
 
 fn parse_lesson(row: &Row, prev: &Option<ParsedLesson>) -> Result<Option<ParsedLesson>, ParserError> {

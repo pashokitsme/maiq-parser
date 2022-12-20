@@ -20,13 +20,13 @@ pub struct Lesson {
 }
 
 #[derive(Debug, Serialize, Clone)]
-pub struct Day {
+pub struct Snapshot {
   pub date: NaiveDate,
   pub uid: String,
   pub groups: Vec<Group>,
 }
 
-impl Day {
+impl Snapshot {
   //? date is None = today.
   pub fn new(groups: Vec<Group>, date: Option<NaiveDate>) -> Self {
     let date = date.unwrap_or(chrono::Utc::now().date_naive());
