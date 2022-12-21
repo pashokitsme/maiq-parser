@@ -7,7 +7,7 @@ use table_extract::Row;
 use crate::{
   fetch::Fetched,
   timetable::{Group, Lesson, Snapshot},
-  ParserError,
+  Fetch, ParserError,
 };
 
 #[derive(Clone)]
@@ -45,6 +45,17 @@ pub async fn parse(fetched: &Fetched) -> Result<Snapshot, ParserError> {
   }
 
   let groups = map_lessons_to_groups(&lessons);
+
+  // todo: parse date
+  /*   let now = chrono::Utc::now().date_naive();
+    let date = match fetched.fetch_mode {
+      Fetch::Today => now,
+      Fetch::Tomorrow => {
+        if now.iter_days()
+      }
+  }
+  */
+
   Ok(Snapshot::new(groups, None))
 }
 

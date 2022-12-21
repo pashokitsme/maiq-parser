@@ -1,4 +1,4 @@
-use chrono::NaiveDate;
+use chrono::{DateTime, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
 use sha2::{digest::Digest, Sha256};
 
@@ -22,6 +22,7 @@ pub struct Lesson {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Snapshot {
   pub date: NaiveDate,
+  pub parsed_date: DateTime<Utc>,
   pub uid: String,
   pub groups: Vec<Group>,
 }
@@ -29,9 +30,10 @@ pub struct Snapshot {
 impl Snapshot {
   //? date is None = today.
   pub fn new(groups: Vec<Group>, date: Option<NaiveDate>) -> Self {
-    let date = date.unwrap_or(chrono::Utc::now().date_naive());
+    let now = chrono::Utc::now();
+    let date = date.unwrap_or(now.date_naive());
     let hash = Self::get_hash(&groups);
-    Self { date, uid: hash, groups }
+    Self { date, uid: hash, groups, parsed_date: now }
   }
 
   fn get_hash(groups: &Vec<Group>) -> String {
