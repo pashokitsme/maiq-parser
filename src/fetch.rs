@@ -2,7 +2,7 @@ use std::{fmt::Display, time::Duration};
 
 use stopwatch::Stopwatch;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Fetch {
   Today,
   Tomorrow,
