@@ -24,14 +24,17 @@ pub fn map_weekday<'d>(day: Weekday) -> &'d str {
   }
 }
 
+// todo: map day to Weekday
 pub fn map_day<'d>(date: &NaiveDate, day: &'d str) -> NaiveDate {
   let mut max = 10;
-  let count = date
-    .iter_days()
-    .take_while(|x| {
-      max -= 1;
-      map_weekday(x.weekday()) == day || max == 0
-    })
-    .count();
+  let mut count: u64 = 0;
+  for curr in date.iter_days() {
+    max -= 1;
+    if map_weekday(curr.weekday()) == day || max == 0 {
+      break;
+    }
+    count += 1;
+  }
+  println!("{}", count);
   date.checked_add_days(Days::new(count as u64)).unwrap()
 }
