@@ -1,16 +1,16 @@
 use chrono::NaiveDate;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sha2::{digest::Digest, Sha256};
 
 use crate::utils::usize_as_bytes;
 
-#[derive(Debug, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Group {
   pub name: String,
   pub lessons: Vec<Lesson>,
 }
 
-#[derive(Debug, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Lesson {
   pub num: usize,
   pub name: String,
@@ -19,7 +19,7 @@ pub struct Lesson {
   pub classroom: Option<String>,
 }
 
-#[derive(Debug, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Snapshot {
   pub date: NaiveDate,
   pub uid: String,
