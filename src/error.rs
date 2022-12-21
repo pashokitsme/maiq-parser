@@ -2,10 +2,10 @@ use std::num::ParseIntError;
 
 #[derive(thiserror::Error, Debug)]
 pub enum ParserError {
-  #[error("Расписания ещё нет")]
+  #[error("There is no timetable yet")]
   NotYet,
 
-  #[error("Не удалось спарсить: {0}")]
+  #[error("{0}")]
   CantParse(String),
 
   #[error("{0}")]
