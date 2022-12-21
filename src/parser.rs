@@ -1,5 +1,6 @@
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder};
 
+use chrono::NaiveDate;
 use regex::Regex;
 use scraper::Html;
 use table_extract::Row;
@@ -7,7 +8,8 @@ use table_extract::Row;
 use crate::{
   fetch::Fetched,
   timetable::{Group, Lesson, Snapshot},
-  Fetch, ParserError,
+  utils::map_day,
+  ParserError,
 };
 
 #[derive(Clone)]
@@ -34,9 +36,11 @@ pub async fn parse(fetched: &Fetched) -> Result<Snapshot, ParserError> {
     Some(x) => x,
     None => return Err(ParserError::NotYet),
   };
+  let mut table = table.iter();
   let mut lessons = vec![];
   let mut prev: Option<ParsedLesson> = None;
-  for row in table.iter().skip(3) {
+  let date = parse_date(&table.next().unwrap());
+  for row in table.skip(2) {
     let lesson = parse_lesson(&row, &prev)?;
     if lesson.is_some() {
       prev = lesson.clone();
@@ -47,16 +51,14 @@ pub async fn parse(fetched: &Fetched) -> Result<Snapshot, ParserError> {
   let groups = map_lessons_to_groups(&lessons);
 
   // todo: parse date
-  /*   let now = chrono::Utc::now().date_naive();
-    let date = match fetched.fetch_mode {
-      Fetch::Today => now,
-      Fetch::Tomorrow => {
-        if now.iter_days()
-      }
-  }
-  */
+  Ok(Snapshot::new(groups, Some(date)))
+}
 
-  Ok(Snapshot::new(groups, None))
+fn parse_date(row: &Row) -> NaiveDate {
+  let text = as_text(row.iter().next().unwrap());
+  let weekday = text.split('\n').rev().next().unwrap().split(' ').next().unwrap();
+  let today = chrono::Utc::now().date_naive();
+  map_day(&today, weekday)
 }
 
 fn parse_lesson(row: &Row, prev: &Option<ParsedLesson>) -> Result<Option<ParsedLesson>, ParserError> {
