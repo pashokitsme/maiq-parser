@@ -3,7 +3,7 @@ name = "maiq_parser"
 authors = ["pashokitsme <pashamail79@gmail.com>"]
 repository = "https://github.com/pashokitsme/maiq-parser"
 license = "MPL-2.0"
-version = "0.1.7"
+version = "0.2.0"
 edition = "2021"
 
 [profile.release]
@@ -32,5 +32,5 @@ scraper = "0.14.0"
 table-extract = "0.2.2"
 
 #for debug
-# tokio = { version = "1.23.0", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1.23.0", features = ["macros", "rt-multi-thread"] }
 
