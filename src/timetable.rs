@@ -24,6 +24,7 @@ pub struct Lesson {
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Snapshot {
+  #[serde(serialize_with = "to_ts", deserialize_with = "from_ts")]
   pub date: DateTime<Utc>,
   #[serde(serialize_with = "to_ts", deserialize_with = "from_ts")]
   pub parsed_date: DateTime<Utc>,
