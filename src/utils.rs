@@ -35,6 +35,5 @@ pub fn map_day<'d>(date: &NaiveDate, day: &'d str) -> NaiveDate {
     }
     count += 1;
   }
-  println!("{}", count);
   date.checked_add_days(Days::new(count as u64)).unwrap()
 }
