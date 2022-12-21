@@ -18,7 +18,7 @@ async fn main() {
   };
 
   // print_snapshot(&s)
-  // println!("Date: {}", s.date)
+  println!("Date: {}", s.date)
 }
 
 #[allow(dead_code)]

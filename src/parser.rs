@@ -50,13 +50,12 @@ pub async fn parse(fetched: &Fetched) -> Result<Snapshot, ParserError> {
 
   let groups = map_lessons_to_groups(&lessons);
 
-  // todo: parse date
   Ok(Snapshot::new(groups, Some(date)))
 }
 
 fn parse_date(row: &Row) -> NaiveDate {
-  let text = as_text(row.iter().next().unwrap());
-  let weekday = text.split('\n').rev().next().unwrap().split(' ').next().unwrap();
+  let full_str = as_text(row.iter().next().unwrap());
+  let weekday = full_str.trim().split(' ').rev().skip(2).next().unwrap();
   let today = chrono::Utc::now().date_naive();
   map_day(&today, weekday)
 }
