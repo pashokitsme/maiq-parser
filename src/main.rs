@@ -1,8 +1,5 @@
-use maiq_parser::{
-  fetch::{fetch, Fetch},
-  parser::parse,
-  timetable::Snapshot,
-};
+use chrono::{DateTime, Days, Utc};
+use maiq_parser::timetable::Snapshot;
 
 // ? Too lazy to write tests
 
@@ -10,15 +7,24 @@ use maiq_parser::{
 #[tokio::main]
 async fn main() {
   dotenvy::dotenv().unwrap();
-  let fetched = fetch(Fetch::Tomorrow).await.unwrap();
-  println!("{}", fetched);
-  let s = match parse(&fetched).await {
-    Ok(x) => x,
-    Err(x) => return println!("Ошибка: {}", x),
-  };
+  let date = Utc::now()
+    .date_naive()
+    .checked_add_days(Days::new(1))
+    .unwrap()
+    .and_hms_opt(0, 0, 0)
+    .unwrap();
+  let utc = DateTime::<Utc>::from_utc(date, Utc);
+  let date: DateTime<Utc> = DateTime::from_utc(date, Utc);
+  assert_eq!(date.timestamp(), utc.timestamp())
+  // let fetched = fetch(Fetch::Tomorrow).await.unwrap();
+  // println!("{}", fetched);
+  // let s = match parse(&fetched).await {
+  //   Ok(x) => x,
+  //   Err(x) => return println!("Ошибка: {}", x),
+  // };
 
-  // print_snapshot(&s)
-  println!("Date: {}", s.date)
+  // // print_snapshot(&s)
+  // println!("Date: {}", s.date)
 }
 
 #[allow(dead_code)]
