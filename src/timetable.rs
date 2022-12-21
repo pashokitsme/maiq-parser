@@ -1,4 +1,4 @@
-use chrono::{DateTime, NaiveDate, Utc};
+use chrono::{serde::ts_seconds::deserialize as from_ts, serde::ts_seconds::serialize as to_ts, DateTime, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
 use sha2::{digest::Digest, Sha256};
 
@@ -22,6 +22,7 @@ pub struct Lesson {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Snapshot {
   pub date: NaiveDate,
+  #[serde(serialize_with = "to_ts", deserialize_with = "from_ts")]
   pub parsed_date: DateTime<Utc>,
   pub uid: String,
   pub groups: Vec<Group>,
