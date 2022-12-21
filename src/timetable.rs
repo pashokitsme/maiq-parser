@@ -1,11 +1,8 @@
-use chrono::{
-  serde::ts_seconds::deserialize as from_ts, serde::ts_seconds::serialize as to_ts, DateTime, NaiveDate, NaiveDateTime,
-  NaiveTime, Utc,
-};
+use chrono::{serde::ts_seconds::deserialize as from_ts, serde::ts_seconds::serialize as to_ts, DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sha2::{digest::Digest, Sha256};
 
-use crate::utils::usize_as_bytes;
+use crate::utils::{current_date, usize_as_bytes};
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Group {
@@ -34,10 +31,9 @@ pub struct Snapshot {
 
 impl Snapshot {
   //? date is None = today.
-  pub fn new(groups: Vec<Group>, date: Option<NaiveDate>) -> Self {
+  pub fn new(groups: Vec<Group>, date: Option<DateTime<Utc>>) -> Self {
     let now = chrono::Utc::now();
-    let date = date.unwrap_or(now.date_naive());
-    let date: DateTime<Utc> = DateTime::from_utc(NaiveDateTime::new(date, NaiveTime::default()), Utc);
+    let date = date.unwrap_or(DateTime::<Utc>::from_utc(current_date(), Utc));
     let hash = Self::get_hash(&groups);
     Self { date, uid: hash, groups, parsed_date: now }
   }
