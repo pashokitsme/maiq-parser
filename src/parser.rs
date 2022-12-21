@@ -1,6 +1,6 @@
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder};
 
-use chrono::NaiveDate;
+use chrono::{DateTime, NaiveDate, Utc};
 use regex::Regex;
 use scraper::Html;
 use table_extract::Row;
