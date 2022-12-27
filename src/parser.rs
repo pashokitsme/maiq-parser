@@ -56,7 +56,7 @@ pub async fn parse(fetched: &Fetched) -> Result<Snapshot, ParserError> {
 fn parse_date(row: &Row) -> DateTime<Utc> {
   let full_str = as_text(row.iter().next().unwrap());
   let weekday = full_str.trim().split(' ').rev().skip(2).next().unwrap();
-  let today = utils::current_date();
+  let today = utils::current_date(0);
   map_day(&today, weekday)
 }
 

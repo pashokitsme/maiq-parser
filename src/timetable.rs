@@ -33,10 +33,10 @@ pub struct Snapshot {
 }
 
 impl Snapshot {
-  //? date is None = today.
+  /// `date` is `None` = today.
   pub fn new(groups: Vec<Group>, date: Option<DateTime<Utc>>) -> Self {
     let now = chrono::Utc::now();
-    let date = date.unwrap_or(DateTime::<Utc>::from_utc(current_date(), Utc));
+    let date = date.unwrap_or(DateTime::<Utc>::from_utc(current_date(0), Utc));
     let hash = Self::get_hash(&groups);
     Self { date, uid: hash, groups, parsed_date: now }
   }

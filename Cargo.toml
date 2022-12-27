@@ -26,11 +26,9 @@ serde = { version = "1.0.149", features = ["derive"] }
 sha2 = "0.10.6"
 stopwatch = "0.0.7"
 thiserror = "1.0.37"
+tokio = { version = "1.23.0", features = ["macros", "rt-multi-thread"] }
 
-#todo replace with tl
+# todo: replace with tl
 scraper = "0.14.0"
 table-extract = "0.2.2"
-
-#for debug
-tokio = { version = "1.23.0", features = ["macros", "rt-multi-thread"] }
 

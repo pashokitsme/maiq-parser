@@ -1,4 +1,4 @@
-use chrono::{DateTime, Datelike, Days, NaiveDateTime, Utc, Weekday};
+use chrono::{DateTime, Datelike, Days, Duration, NaiveDateTime, Utc, Weekday};
 
 const SIZE_OF_USIZE: usize = (usize::BITS / 8) as usize;
 
@@ -38,10 +38,11 @@ pub fn map_day<'d>(date: &NaiveDateTime, day: &'d str) -> DateTime<Utc> {
   DateTime::<Utc>::from_utc(date.checked_add_days(Days::new(count as u64)).unwrap(), Utc)
 }
 
-pub fn current_date() -> NaiveDateTime {
-  Utc::now()
-    .date_naive()
-    .checked_add_days(Days::new(1))
+pub fn current_date(offset: u64) -> NaiveDateTime {
+  let now = Utc::now().naive_utc() + Duration::seconds(60 * 60 * 3);
+  now
+    .date()
+    .checked_add_days(Days::new(offset))
     .unwrap()
     .and_hms_opt(0, 0, 0)
     .unwrap()
