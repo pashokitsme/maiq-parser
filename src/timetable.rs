@@ -1,4 +1,4 @@
-use chrono::{serde::ts_seconds::deserialize as from_ts, DateTime, Utc};
+use chrono::{format::Fixed, serde::ts_seconds::deserialize as from_ts, DateTime, FixedOffset, Local, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
 use sha2::{digest::Digest, Sha256};
 
@@ -25,18 +25,18 @@ pub struct Lesson {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Snapshot {
   // #[serde(deserialize_with = "from_ts")]
-  pub date: DateTime<Utc>,
+  pub date: NaiveDate,
   // #[serde(deserialize_with = "from_ts")]
-  pub parsed_date: DateTime<Utc>,
+  pub parsed_date: DateTime<Local>,
   pub uid: String,
   pub groups: Vec<Group>,
 }
 
 impl Snapshot {
   /// `date` is `None` = today.
-  pub fn new(groups: Vec<Group>, date: Option<DateTime<Utc>>) -> Self {
-    let now = chrono::Utc::now();
-    let date = date.unwrap_or(DateTime::<Utc>::from_utc(current_date(0), Utc));
+  pub fn new(groups: Vec<Group>, date: Option<NaiveDate>) -> Self {
+    let now = chrono::Local::now();
+    let date = date.unwrap_or(current_date(0).date());
     let hash = Self::get_hash(&groups);
     Self { date, uid: hash, groups, parsed_date: now }
   }
