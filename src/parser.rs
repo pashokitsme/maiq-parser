@@ -1,6 +1,6 @@
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder};
 
-use chrono::NaiveDate;
+use chrono::{DateTime, FixedOffset};
 use regex::Regex;
 use scraper::Html;
 use table_extract::Row;
@@ -50,10 +50,10 @@ pub async fn parse(fetched: &Fetched) -> Result<Snapshot, ParserError> {
 
   let groups = map_lessons_to_groups(&lessons);
 
-  Ok(Snapshot::new(groups, Some(date)))
+  Ok(Snapshot::new(groups, date))
 }
 
-fn parse_date(row: &Row) -> NaiveDate {
+fn parse_date(row: &Row) -> DateTime<FixedOffset> {
   let full_str = as_text(row.iter().next().unwrap());
   let weekday = full_str.trim().split(' ').rev().skip(2).next().unwrap();
   let today = utils::current_date(0);
