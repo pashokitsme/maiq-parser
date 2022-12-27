@@ -12,25 +12,25 @@ pub fn usize_as_bytes(n: usize) -> [u8; SIZE_OF_USIZE] {
   res
 }
 
-pub fn map_weekday<'d>(day: Weekday) -> &'d str {
+pub fn map_weekday<'d>(day: &'d str) -> Weekday {
   match day {
-    Weekday::Mon => "Понедельник",
-    Weekday::Tue => "Вторник",
-    Weekday::Wed => "Среда",
-    Weekday::Thu => "Четверг",
-    Weekday::Fri => "Пятница",
-    Weekday::Sat => "Суббота",
-    Weekday::Sun => "Воскресенье",
+    "Понедельник" => Weekday::Mon,
+    "Вторник" => Weekday::Tue,
+    "Среда" => Weekday::Wed,
+    "Четверг" => Weekday::Thu,
+    "Пятница" => Weekday::Fri,
+    "Суббота" => Weekday::Sat,
+    "Воскресенье" => Weekday::Sun,
+    _ => unimplemented!(),
   }
 }
 
-// todo: map day to Weekday
 pub fn map_day<'d>(date: &NaiveDateTime, day: &'d str) -> DateTime<Utc> {
-  let mut max = 10;
   let mut count: u64 = 0;
-  for curr in date.date().iter_days() {
-    max -= 1;
-    if map_weekday(curr.weekday()) == day || max == 0 {
+  let day = map_weekday(day);
+  let mut days = date.date().iter_days();
+  for _ in 0..10 {
+    if days.next().unwrap().weekday() == day {
       break;
     }
     count += 1;

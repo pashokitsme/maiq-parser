@@ -15,7 +15,7 @@ async fn main() {
   // let utc = DateTime::<Utc>::from_utc(date, Utc);
   // let date: DateTime<Utc> = DateTime::from_utc(date, Utc);
   // assert_eq!(date.timestamp(), utc.timestamp())
-  let fetched = fetch(Fetch::Tomorrow).await.unwrap();
+  let fetched = fetch(Fetch::Today).await.unwrap();
   let s = match parse(&fetched).await {
     Ok(x) => x,
     Err(x) => return println!("Ошибка: {}", x),
