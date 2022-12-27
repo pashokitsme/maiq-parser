@@ -107,11 +107,24 @@ fn parse_lesson(row: &Row, prev: &Option<ParsedLesson>) -> Result<Option<ParsedL
     },
   };
 
-  let mut name_n_teacher = name_n_teacher.split(',').map(|x| x.trim().to_string());
-  let name = name_n_teacher.next().unwrap();
-  let teacher = name_n_teacher.next();
-
-  Ok(Some(ParsedLesson { group, nums, lesson: Lesson { num: 0, name, subgroup, teacher, classroom } }))
+  // todo: rewrite this trash code
+  let name_n_teacher = name_n_teacher.split(',');
+  let count = name_n_teacher.clone().count();
+  if count > 1 {
+    let mut name = name_n_teacher
+      .clone()
+      .take(count - 1)
+      .map(|s| format!("{s},"))
+      .collect::<String>()
+      .trim()
+      .to_string();
+    name.pop();
+    let teacher = name_n_teacher.rev().next().and_then(|t| Some(t.trim().to_string()));
+    Ok(Some(ParsedLesson { group, nums, lesson: Lesson { num: 0, name, subgroup, teacher, classroom } }))
+  } else {
+    let name = name_n_teacher.collect::<String>().trim().to_string();
+    Ok(Some(ParsedLesson { group, nums, lesson: Lesson { num: 0, name, subgroup, teacher: None, classroom } }))
+  }
 }
 
 fn map_lessons_to_groups(vec: &Vec<ParsedLesson>) -> Vec<Group> {

@@ -21,8 +21,7 @@ async fn main() {
     Err(x) => return println!("Ошибка: {}", x),
   };
 
-  // // print_snapshot(&s)
-  println!("Date: {}", s.date)
+  print_snapshot(&s)
 }
 
 #[allow(dead_code)]
@@ -33,7 +32,7 @@ fn print_snapshot(s: &Snapshot) {
     for lesson in &group.lessons {
       print!("\t#{} ", lesson.num);
       if let Some(sub) = lesson.subgroup {
-        print!(" (п. {}) ", sub)
+        print!("(п. {}) ", sub)
       }
       print!("{} ", lesson.name);
 
