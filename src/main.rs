@@ -21,7 +21,8 @@ async fn main() {
     Err(x) => return println!("Ошибка: {}", x),
   };
 
-  print_snapshot(&s)
+  println!("parsed: {}, date: {}", s.parsed_date, s.date)
+  // print_snapshot(&s)
 }
 
 #[allow(dead_code)]
