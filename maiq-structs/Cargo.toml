@@ -1,0 +1,10 @@
+[package]
+name = "maiq-structs"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+chrono = { version = "0.4.23", features = ["serde"] }
+pretty-sha2 = "0.1.5"
+serde = "1.0.152"
+sha2 = "0.10.6"
