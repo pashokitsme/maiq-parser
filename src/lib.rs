@@ -3,14 +3,11 @@ pub use parser::parse;
 
 use chrono::{DateTime, Utc};
 use error::ParserError;
-use timetable::Snapshot;
+use maiq_structs::timetable::Snapshot;
 
 pub mod error;
 pub mod fetch;
 pub mod parser;
-pub mod timetable;
-
-mod utils;
 
 pub struct Parsed {
   pub raw: Fetched,

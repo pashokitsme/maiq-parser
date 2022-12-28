@@ -1,4 +1,5 @@
-use maiq_parser::{fetch, parser::parse, timetable::Snapshot, Fetch};
+use maiq_parser::{fetch, parser::parse, Fetch};
+use maiq_structs::timetable::Snapshot;
 
 // ? Too lazy to write tests
 
