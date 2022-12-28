@@ -1,4 +1,4 @@
-use chrono::{DateTime, Datelike, Days, FixedOffset, Timelike, Utc, Weekday};
+use chrono::{DateTime, Datelike, Days, Duration, Timelike, Utc, Weekday};
 
 const SIZE_OF_USIZE: usize = (usize::BITS / 8) as usize;
 
@@ -25,7 +25,7 @@ pub fn map_weekday<'d>(day: &'d str) -> Weekday {
   }
 }
 
-pub fn map_day<'d>(date: &DateTime<FixedOffset>, day: &'d str) -> DateTime<FixedOffset> {
+pub fn map_day<'d>(date: &DateTime<Utc>, day: &'d str) -> DateTime<Utc> {
   let mut count: u64 = 0;
   let day = map_weekday(day);
   let mut days = date.date_naive().iter_days();
@@ -38,10 +38,10 @@ pub fn map_day<'d>(date: &DateTime<FixedOffset>, day: &'d str) -> DateTime<Fixed
   date.checked_add_days(Days::new(count as u64)).unwrap()
 }
 
-pub fn current_date(offset: u64) -> DateTime<FixedOffset> {
-  Utc::now()
-    .with_timezone(&FixedOffset::east_opt(3 * 60 * 60).unwrap())
-    .with_hour(6)
+pub fn current_date(offset: u64) -> DateTime<Utc> {
+  let now = Utc::now() + Duration::hours(3);
+  now
+    .with_hour(0)
     .unwrap()
     .with_minute(0)
     .unwrap()
