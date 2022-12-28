@@ -27,6 +27,7 @@ sha2 = "0.10.6"
 stopwatch = "0.0.7"
 thiserror = "1.0.37"
 tokio = { version = "1.23.0", features = ["macros", "rt-multi-thread"] }
+maiq-structs = { path = "maiq-structs/" }
 
 # todo: replace with tl
 scraper = "0.14.0"

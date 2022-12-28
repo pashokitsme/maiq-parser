@@ -1,16 +1,15 @@
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder};
 
 use chrono::{DateTime, Utc};
+use maiq_structs::{
+  timetable::{Group, Lesson, Snapshot},
+  utils,
+};
 use regex::Regex;
 use scraper::Html;
 use table_extract::Row;
 
-use crate::{
-  fetch::Fetched,
-  timetable::{Group, Lesson, Snapshot},
-  utils::{self, map_day},
-  ParserError,
-};
+use crate::{fetch::Fetched, ParserError};
 
 #[derive(Clone)]
 struct ParsedLesson {
@@ -57,7 +56,7 @@ fn parse_date(row: &Row) -> DateTime<Utc> {
   let full_str = as_text(row.iter().next().unwrap());
   let weekday = full_str.trim().split(' ').rev().skip(2).next().unwrap();
   let today = utils::current_date(0);
-  map_day(&today, weekday)
+  utils::map_day(&today, weekday)
 }
 
 fn parse_lesson(row: &Row, prev: &Option<ParsedLesson>) -> Result<Option<ParsedLesson>, ParserError> {
