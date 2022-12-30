@@ -1,10 +1,11 @@
+extern crate maiq_structs;
+
 pub use fetch::{fetch, Fetch, Fetched};
-pub use maiq_structs::timetable::*;
+pub use maiq_structs::*;
 pub use parser::parse;
 
 use chrono::{DateTime, Utc};
 use error::ParserError;
-use maiq_structs::timetable::Snapshot;
 
 pub mod error;
 pub mod fetch;
