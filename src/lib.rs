@@ -1,5 +1,5 @@
 pub use fetch::{fetch, Fetch, Fetched};
-pub use maiq_structs as timetable;
+pub use maiq_structs::timetable::*;
 pub use parser::parse;
 
 use chrono::{DateTime, Utc};
