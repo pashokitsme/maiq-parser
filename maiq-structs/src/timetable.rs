@@ -26,6 +26,7 @@ pub struct Lesson {
 pub struct Snapshot {
   // #[serde(deserialize_with = "from_ts")]
   pub date: DateTime<Utc>,
+  pub is_week_even: bool,
   // #[serde(deserialize_with = "from_ts")]
   pub parsed_date: DateTime<Utc>,
   pub uid: String,
@@ -34,10 +35,10 @@ pub struct Snapshot {
 
 impl Snapshot {
   /// `date` is `None` = today.
-  pub fn new(groups: Vec<Group>, date: DateTime<Utc>) -> Self {
+  pub fn new(groups: Vec<Group>, is_even: bool, date: DateTime<Utc>) -> Self {
     let now = chrono::Utc::now() + Duration::hours(3);
     let hash = Self::get_hash(&groups);
-    Self { date, uid: hash, groups, parsed_date: now }
+    Self { date, uid: hash, is_week_even: is_even, groups, parsed_date: now }
   }
 
   fn get_hash(groups: &Vec<Group>) -> String {

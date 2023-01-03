@@ -1,5 +1,8 @@
 extern crate maiq_structs;
 
+#[macro_use]
+extern crate lazy_static;
+
 pub use fetch::{fetch, Fetch, Fetched};
 pub use maiq_structs::*;
 pub use parser::parse;
@@ -10,6 +13,7 @@ use error::ParserError;
 pub mod error;
 pub mod fetch;
 pub mod parser;
+pub mod replacer;
 
 pub struct Parsed {
   pub raw: Fetched,

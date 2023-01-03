@@ -18,18 +18,16 @@ struct ParsedLesson {
   pub lesson: Lesson,
 }
 
-lazy_static::lazy_static! {
+lazy_static! {
   static ref GROUP_REGEX: Regex = Regex::new(r#"[А-я]{1,2}\d-\d{2}"#).unwrap();
-
   static ref CORASICK: AhoCorasick = AhoCorasickBuilder::new()
     .ascii_case_insensitive(true)
     .build(&["  ", " ", "\n"]);
-
   static ref CORASICK_REPLACE_PATTERNS: [&'static str; 3] = [" ", "", ""];
 }
 
-// todo: use tl crate instead table_extract or rewrite it?
-// todo: parse row and then use it instead parse parts of it
+// todo: rewrite table_extract with tl crate
+// todo: parse row and then use it instead of parsing parts of it
 pub async fn parse(fetched: &Fetched) -> Result<Snapshot, ParserError> {
   let table = match table_extract::Table::find_first(&fetched.html) {
     Some(x) => x,
@@ -49,16 +47,24 @@ pub async fn parse(fetched: &Fetched) -> Result<Snapshot, ParserError> {
 
   let groups = map_lessons_to_groups(&lessons);
 
-  Ok(Snapshot::new(groups, date))
+  Ok(Snapshot::new(groups, date.1, date.0))
 }
 
-fn parse_date(row: &Row) -> DateTime<Utc> {
-  let full_str = as_text(row.iter().next().unwrap());
-  let weekday = full_str.trim().split(' ').rev().skip(2).next().unwrap();
+fn parse_date(row: &Row) -> (DateTime<Utc>, bool) {
+  let full_str_binding = as_text(row.iter().next().unwrap());
+  let mut iter = full_str_binding.trim().split(' ').rev();
+  let even_or_not = match iter.next().unwrap() {
+    "(числитель)" => false,
+    "(знаменатель)" => true,
+    // ? Is it really neseccery to beware of this?
+    _ => false,
+  };
+  let weekday = iter.skip(1).next().unwrap();
   let today = utils::current_date(0);
-  utils::map_day(&today, weekday)
+  (utils::map_day(&today, weekday), even_or_not)
 }
 
+// ? Idk how it works :(
 fn parse_lesson(row: &Row, prev: &Option<ParsedLesson>) -> Result<Option<ParsedLesson>, ParserError> {
   let mut row = row.iter().peekable();
   // println!("{}", row.clone().map(|x| as_text(x)).collect::<String>());
@@ -133,7 +139,6 @@ fn map_lessons_to_groups(vec: &Vec<ParsedLesson>) -> Vec<Group> {
       if *num < 1 {
         continue;
       }
-
       let name = lesson.group.as_str().clone();
       let group = if let Some(x) = res.iter().position(|x| x.name.as_str() == name) {
         &mut res[x]

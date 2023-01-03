@@ -1,12 +1,16 @@
-use maiq_parser::{fetch, parser::parse, Fetch};
 use maiq_structs::timetable::Snapshot;
 
+// ? It's just a junk file for test something
 // ? Too lazy to write tests
 
 #[allow(dead_code, unused_variables)]
 #[tokio::main]
 async fn main() {
   dotenvy::dotenv().unwrap();
+  // let a = replacer::REPLECEMENTS.clone();
+  // let b = replacer::REPLECEMENTS.clone();
+  // let c = replacer::REPLECEMENTS.clone();
+  // println!("{:#?}", *replacer::REPLECEMENTS)
   // let date = Utc::now()
   //   .date_naive()
   //   .checked_add_days(Days::new(1))
@@ -16,13 +20,13 @@ async fn main() {
   // let utc = DateTime::<Utc>::from_utc(date, Utc);
   // let date: DateTime<Utc> = DateTime::from_utc(date, Utc);
   // assert_eq!(date.timestamp(), utc.timestamp())
-  let fetched = fetch(Fetch::Today).await.unwrap();
-  let s = match parse(&fetched).await {
-    Ok(x) => x,
-    Err(x) => return println!("Ошибка: {}", x),
-  };
+  // let fetched = fetch(Fetch::Today).await.unwrap();
+  // let s = match parse(&fetched).await {
+  //   Ok(x) => x,
+  //   Err(x) => return println!("Ошибка: {}", x),
+  // };
 
-  println!("parsed: {}, date: {}", s.parsed_date, s.date)
+  // println!("parsed: {}, date: {}", s.parsed_date, s.date)
   // print_snapshot(&s)
 }
 
