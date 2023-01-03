@@ -9,7 +9,7 @@ use regex::Regex;
 use scraper::Html;
 use table_extract::Row;
 
-use crate::{fetch::Fetched, ParserError};
+use crate::{fetch::Fetched, replacer, ParserError};
 
 #[derive(Clone)]
 struct ParsedLesson {
@@ -45,12 +45,12 @@ pub async fn parse(fetched: &Fetched) -> Result<Snapshot, ParserError> {
     }
   }
 
-  let groups = map_lessons_to_groups(&lessons);
+  let groups = map_lessons_to_groups(&lessons, date.1, date.2);
 
   Ok(Snapshot::new(groups, date.1, date.0))
 }
 
-fn parse_date(row: &Row) -> (DateTime<Utc>, bool) {
+fn parse_date(row: &Row) -> (DateTime<Utc>, bool, u64) {
   let full_str_binding = as_text(row.iter().next().unwrap());
   let mut iter = full_str_binding.trim().split(' ').rev();
   let even_or_not = match iter.next().unwrap() {
@@ -60,8 +60,8 @@ fn parse_date(row: &Row) -> (DateTime<Utc>, bool) {
     _ => false,
   };
   let weekday = iter.skip(1).next().unwrap();
-  let today = utils::current_date(0);
-  (utils::map_day(&today, weekday), even_or_not)
+  let date = utils::map_day(&utils::current_date(0), weekday);
+  (date.0, even_or_not, date.1)
 }
 
 // ? Idk how it works :(
@@ -132,14 +132,14 @@ fn parse_lesson(row: &Row, prev: &Option<ParsedLesson>) -> Result<Option<ParsedL
   }
 }
 
-fn map_lessons_to_groups(vec: &Vec<ParsedLesson>) -> Vec<Group> {
+fn map_lessons_to_groups(vec: &Vec<ParsedLesson>, is_even: bool, date_offset: u64) -> Vec<Group> {
   let mut res: Vec<Group> = vec![];
-  for lesson in vec {
-    for num in &lesson.nums {
+  for parsed in vec {
+    for num in &parsed.nums {
       if *num < 1 {
         continue;
       }
-      let name = lesson.group.as_str().clone();
+      let name = parsed.group.as_str().clone();
       let group = if let Some(x) = res.iter().position(|x| x.name.as_str() == name) {
         &mut res[x]
       } else {
@@ -147,10 +147,17 @@ fn map_lessons_to_groups(vec: &Vec<ParsedLesson>) -> Vec<Group> {
         res.last_mut().unwrap()
       };
 
-      let mut lesson = lesson.lesson.clone();
-      lesson.num = *num;
+      let lesson = if parsed.lesson.name.as_str() == "По расписанию" {
+        replacer::replace(*num, &parsed.group, is_even, date_offset)
+      } else {
+        None
+      };
 
-      group.lessons.push(lesson)
+      group.lessons.push(lesson.unwrap_or_else(|| {
+        let mut lesson = parsed.lesson.clone();
+        lesson.num = *num;
+        lesson
+      }))
     }
   }
 
