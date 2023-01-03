@@ -34,13 +34,13 @@ lazy_static! {
   pub static ref REPLECEMENTS: Vec<DefaultDay> = load_from_default_files();
 }
 
-pub fn replace(num: usize, group_name: String, is_even: bool, date_offset: u64) -> Option<Lesson> {
+pub fn replace<'a>(num: usize, group_name: &'a str, is_even: bool, date_offset: u64) -> Option<Lesson> {
   let now = utils::current_date(date_offset).date_naive().weekday();
   REPLECEMENTS
     .iter()
     .find(|d| d.day == now)
     .and_then(|d| {
-      d.groups.iter().find(|g| g.name == group_name).and_then(|g| {
+      d.groups.iter().find(|g| g.name.as_str() == group_name).and_then(|g| {
         g.lessons.iter().find(|l| match l.is_even {
           Some(e) => l.num == num && e == is_even,
           None => l.num == num,
