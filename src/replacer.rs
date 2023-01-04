@@ -34,8 +34,8 @@ lazy_static! {
   pub static ref REPLECEMENTS: Vec<DefaultDay> = load_from_default_files();
 }
 
-pub fn replace<'a>(num: usize, group_name: &'a str, is_even: bool, date_offset: u64) -> Option<Lesson> {
-  let now = utils::current_date(date_offset).date_naive().weekday();
+pub fn replace<'a>(num: usize, group_name: &'a str, is_even: bool, date_offset: i64) -> Option<Lesson> {
+  let now = utils::now_date(date_offset).date_naive().weekday();
   REPLECEMENTS
     .iter()
     .find(|d| d.day == now)

@@ -2,7 +2,7 @@ use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use sha2::{digest::Digest, Sha256};
 
-use crate::utils::usize_as_bytes;
+use crate::utils::{now, usize_as_bytes};
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Group {
@@ -45,6 +45,10 @@ impl Snapshot {
 
   pub fn group_cloned<'n>(&self, name: &'n str) -> Option<Group> {
     self.group(name).cloned()
+  }
+
+  pub fn age(&self) -> Duration {
+    now(0) - self.parsed_date
   }
 
   fn get_hash(groups: &Vec<Group>) -> String {
