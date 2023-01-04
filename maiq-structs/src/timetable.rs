@@ -24,10 +24,8 @@ pub struct Lesson {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Snapshot {
-  // #[serde(deserialize_with = "from_ts")]
   pub date: DateTime<Utc>,
   pub is_week_even: bool,
-  // #[serde(deserialize_with = "from_ts")]
   pub parsed_date: DateTime<Utc>,
   pub uid: String,
   pub groups: Vec<Group>,
@@ -39,6 +37,14 @@ impl Snapshot {
     let now = chrono::Utc::now() + Duration::hours(3);
     let hash = Self::get_hash(&groups);
     Self { date, uid: hash, is_week_even: is_even, groups, parsed_date: now }
+  }
+
+  pub fn group<'n, 'g>(&'g self, name: &'n str) -> Option<&'g Group> {
+    self.groups.iter().find(|g| g.name.as_str() == name)
+  }
+
+  pub fn group_cloned<'n>(&self, name: &'n str) -> Option<Group> {
+    self.group(name).cloned()
   }
 
   fn get_hash(groups: &Vec<Group>) -> String {
