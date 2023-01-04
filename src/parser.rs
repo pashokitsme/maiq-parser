@@ -50,7 +50,7 @@ pub async fn parse(fetched: &Fetched) -> Result<Snapshot, ParserError> {
   Ok(Snapshot::new(groups, date.1, date.0))
 }
 
-fn parse_date(row: &Row) -> (DateTime<Utc>, bool, u64) {
+fn parse_date(row: &Row) -> (DateTime<Utc>, bool, i64) {
   let full_str_binding = as_text(row.iter().next().unwrap());
   let mut iter = full_str_binding.trim().split(' ').rev();
   let even_or_not = match iter.next().unwrap() {
@@ -60,7 +60,7 @@ fn parse_date(row: &Row) -> (DateTime<Utc>, bool, u64) {
     _ => false,
   };
   let weekday = iter.skip(1).next().unwrap();
-  let date = utils::map_day(&utils::current_date(0), weekday);
+  let date = utils::map_day(&utils::now_date(0), weekday);
   (date.0, even_or_not, date.1)
 }
 
@@ -132,7 +132,7 @@ fn parse_lesson(row: &Row, prev: &Option<ParsedLesson>) -> Result<Option<ParsedL
   }
 }
 
-fn map_lessons_to_groups(vec: &Vec<ParsedLesson>, is_even: bool, date_offset: u64) -> Vec<Group> {
+fn map_lessons_to_groups(vec: &Vec<ParsedLesson>, is_even: bool, date_offset: i64) -> Vec<Group> {
   let mut res: Vec<Group> = vec![];
   for parsed in vec {
     for num in &parsed.nums {

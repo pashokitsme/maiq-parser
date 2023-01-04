@@ -25,7 +25,7 @@ pub fn map_weekday<'d>(day: &'d str) -> Weekday {
   }
 }
 
-pub fn map_day<'d>(date: &DateTime<Utc>, day: &'d str) -> (DateTime<Utc>, u64) {
+pub fn map_day<'d>(date: &DateTime<Utc>, day: &'d str) -> (DateTime<Utc>, i64) {
   let mut count: u64 = 0;
   let day = map_weekday(day);
   let mut days = date.date_naive().iter_days();
@@ -35,12 +35,11 @@ pub fn map_day<'d>(date: &DateTime<Utc>, day: &'d str) -> (DateTime<Utc>, u64) {
     }
     count += 1;
   }
-  (date.checked_add_days(Days::new(count as u64)).unwrap(), count)
+  (date.checked_add_days(Days::new(count)).unwrap(), count as i64)
 }
 
-pub fn current_date(offset: u64) -> DateTime<Utc> {
-  let now = Utc::now() + Duration::hours(3);
-  now
+pub fn now_date(offset_days: i64) -> DateTime<Utc> {
+  now(offset_days)
     .with_hour(0)
     .unwrap()
     .with_minute(0)
@@ -49,6 +48,8 @@ pub fn current_date(offset: u64) -> DateTime<Utc> {
     .unwrap()
     .with_nanosecond(0)
     .unwrap()
-    .checked_add_days(Days::new(offset))
-    .unwrap()
+}
+
+pub fn now(offset_days: i64) -> DateTime<Utc> {
+  Utc::now() + Duration::hours(3) + Duration::days(offset_days)
 }
