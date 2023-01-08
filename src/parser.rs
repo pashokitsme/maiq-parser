@@ -20,8 +20,17 @@ lazy_static! {
   static ref CORASICK: AhoCorasick = AhoCorasickBuilder::new()
     .ascii_case_insensitive(true)
     .build(&["  ", " ", "\n"]);
-  static ref CORASICK_REPLACE_PATTERNS: [&'static str; 3] = [" ", "", ""];
+  static ref CORASICK_REPLACE_PATTERNS: [&'static str; 3] = [" ", " ", ""];
 }
+
+/*
+  static ref CORASICK: AhoCorasick = AhoCorasickBuilder::new().ascii_case_insensitive(true).build(&[
+    "  ", "\t", "\n", "\r", " ", "\u{0085}", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", "\u{200B}",
+    "\u{2028}", "\u{2029}", "　", "\u{FEFF}"
+  ]);
+  static ref CORASICK_REPLACE_PATTERNS: [&'static str; 24] =
+    [" ", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""];
+*/
 
 // todo: rewrite table_extract with tl crate
 // todo: parse row and then use it instead of parsing parts of it
