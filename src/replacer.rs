@@ -31,7 +31,7 @@ pub struct DefaultLesson {
 
 lazy_static! {
   static ref FILE_NAMES: [&'static str; 6] = ["mon", "tue", "wed", "thu", "fri", "sat"];
-  pub static ref REPLECEMENTS: Vec<DefaultDay> = load_from_default_files();
+  pub static ref REPLECEMENTS: Vec<DefaultDay> = load_defaults();
 }
 
 pub fn replace<'a>(num: usize, group_name: &'a str, is_even: bool, date_offset: i64) -> Option<Lesson> {
@@ -53,13 +53,11 @@ pub fn replace<'a>(num: usize, group_name: &'a str, is_even: bool, date_offset: 
     })
 }
 
-fn load_from_default_files() -> Vec<DefaultDay> {
-  println!("123");
-  let mut res = vec![];
-  for name in FILE_NAMES.into_iter() {
-    read(&format!("default/{}.json", name)).map(|d| res.push(d));
-  }
-  res
+fn load_defaults() -> Vec<DefaultDay> {
+  FILE_NAMES
+    .iter()
+    .map(|f| read(&format!("default/{}.json", f)).expect(&format!("Can't load default for {}", f)))
+    .collect::<Vec<DefaultDay>>()
 }
 
 fn read(path: &String) -> Option<DefaultDay> {
