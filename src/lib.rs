@@ -4,6 +4,7 @@ extern crate maiq_structs;
 extern crate lazy_static;
 
 pub use fetch::{fetch, Fetch, Fetched};
+use log::info;
 pub use maiq_structs::*;
 pub use parser::parse;
 
@@ -26,4 +27,13 @@ pub async fn fetch_n_parse(mode: &Fetch) -> Result<Parsed, ParserError> {
   let raw = fetch(mode.to_owned()).await?;
   let snapshot = parse(&raw).await?;
   Ok(Parsed { raw, snapshot, date })
+}
+
+pub fn warmup_defaults() {
+  let group_names = replacer::REPLECEMENTS
+    .iter()
+    .map(|day| format!("{}: {}", day.day, day.groups.iter().map(|g| g.name.clone()).collect::<String>()))
+    .collect::<Vec<String>>();
+
+  info!("Loaded replacements for: {:?}", group_names);
 }
