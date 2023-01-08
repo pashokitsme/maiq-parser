@@ -1,5 +1,4 @@
 /target
-/assets
-
+/dummy
 .env
 Cargo.lock

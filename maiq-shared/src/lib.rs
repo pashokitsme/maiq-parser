@@ -2,6 +2,7 @@ pub mod utils;
 
 use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
+use sha2::{digest::Digest, Sha256};
 use utils::bytes_as_str;
 
 use crate::utils::now;
@@ -54,18 +55,18 @@ impl Snapshot {
   }
 
   fn get_hash(groups: &Vec<Group>) -> String {
-    let mut hasher = adler32::RollingAdler32::new();
+    let mut hasher = Sha256::new();
     for group in groups {
-      hasher.update_buffer(group.name.as_bytes());
+      hasher.update(group.name.as_bytes());
       for lesson in &group.lessons {
-        hasher.update_buffer(lesson.classroom.clone().unwrap_or_default().as_bytes());
-        hasher.update_buffer(lesson.teacher.clone().unwrap_or_default().as_bytes());
-        hasher.update_buffer(lesson.name.as_bytes());
-        hasher.update_buffer(&num_as_bytes!(lesson.subgroup.unwrap_or(0), usize));
-        hasher.update_buffer(&num_as_bytes!(lesson.num, usize));
+        hasher.update(lesson.classroom.clone().unwrap_or_default().as_bytes());
+        hasher.update(lesson.teacher.clone().unwrap_or_default().as_bytes());
+        hasher.update(lesson.name.as_bytes());
+        hasher.update(&num_as_bytes!(lesson.subgroup.unwrap_or(0), usize));
+        hasher.update(&num_as_bytes!(lesson.num, usize));
       }
     }
 
-    bytes_as_str(&num_as_bytes!(hasher.hash(), u32))
+    bytes_as_str(&hasher.finalize()[..])
   }
 }
