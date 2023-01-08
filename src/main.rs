@@ -1,4 +1,6 @@
-use maiq_parser::warmup_defaults;
+use std::{fs, time::Duration};
+
+use maiq_parser::{parser, warmup_defaults, Fetched};
 use maiq_shared::Snapshot;
 
 // ? It's just a junk file for test something
@@ -8,10 +10,13 @@ use maiq_shared::Snapshot;
 #[tokio::main]
 async fn main() {
   dotenvy::dotenv().unwrap();
-  warmup_defaults();
-  // let a = replacer::REPLECEMENTS.clone();
-  // let b = replacer::REPLECEMENTS.clone();
-  // let c = replacer::REPLECEMENTS.clone();
+  // warmup_defaults();
+
+  let html = fs::read_to_string("dummy/1.html").unwrap();
+  let fetched = Fetched { html, took: Duration::from_secs(1), etag: "123".into(), fetch_mode: maiq_parser::Fetch::Today };
+  let parsed = parser::parse(&fetched).await.unwrap();
+  println!("{}", parsed.uid)
+  // print_snapshot(&parsed)
   // println!("{:#?}", *replacer::REPLECEMENTS)
   // let date = Utc::now()
   //   .date_naive()
