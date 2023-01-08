@@ -1,10 +1,7 @@
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder};
 
 use chrono::{DateTime, Utc};
-use maiq_structs::{
-  timetable::{Group, Lesson, Snapshot},
-  utils,
-};
+use maiq_shared::*;
 use regex::Regex;
 use scraper::Html;
 use table_extract::Row;

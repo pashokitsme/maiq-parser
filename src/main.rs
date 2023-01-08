@@ -1,5 +1,5 @@
 use maiq_parser::warmup_defaults;
-use maiq_structs::timetable::Snapshot;
+use maiq_shared::Snapshot;
 
 // ? It's just a junk file for test something
 // ? Too lazy to write tests

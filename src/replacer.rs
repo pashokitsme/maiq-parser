@@ -1,7 +1,7 @@
 use std::fs;
 
 use chrono::{Datelike, Weekday};
-use maiq_structs::{utils, Lesson};
+use maiq_shared::{utils, Lesson};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

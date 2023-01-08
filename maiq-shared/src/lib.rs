@@ -1,3 +1,5 @@
+pub mod utils;
+
 use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use sha2::{digest::Digest, Sha256};
