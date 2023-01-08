@@ -10,13 +10,13 @@ use maiq_shared::Snapshot;
 #[tokio::main]
 async fn main() {
   dotenvy::dotenv().unwrap();
-  // warmup_defaults();
+  warmup_defaults();
 
   let html = fs::read_to_string("dummy/1.html").unwrap();
   let fetched = Fetched { html, took: Duration::from_secs(1), etag: "123".into(), fetch_mode: maiq_parser::Fetch::Today };
   let parsed = parser::parse(&fetched).await.unwrap();
-  println!("{}", parsed.uid)
-  // print_snapshot(&parsed)
+  // println!("{}", parsed.uid)
+  print_snapshot(&parsed)
   // println!("{:#?}", *replacer::REPLECEMENTS)
   // let date = Utc::now()
   //   .date_naive()
