@@ -1,3 +1,4 @@
+use maiq_parser::warmup_defaults;
 use maiq_structs::timetable::Snapshot;
 
 // ? It's just a junk file for test something
@@ -7,6 +8,7 @@ use maiq_structs::timetable::Snapshot;
 #[tokio::main]
 async fn main() {
   dotenvy::dotenv().unwrap();
+  warmup_defaults();
   // let a = replacer::REPLECEMENTS.clone();
   // let b = replacer::REPLECEMENTS.clone();
   // let c = replacer::REPLECEMENTS.clone();
