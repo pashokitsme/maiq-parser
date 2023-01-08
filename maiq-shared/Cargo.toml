@@ -1,10 +1,10 @@
 [package]
 name = "maiq-shared"
+authors = ["pashokitsme <pashamail79@gmail.com>"]
 version = "0.1.1"
 edition = "2021"
 
 [dependencies]
 chrono = { version = "0.4.23", features = ["serde"] }
-pretty-sha2 = "0.1.5"
 serde = "1.0.152"
-sha2 = "0.10.6"
+adler32 = "1.2.0"

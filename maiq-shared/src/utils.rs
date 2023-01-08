@@ -1,14 +1,30 @@
 use chrono::{DateTime, Datelike, Days, Duration, Timelike, Utc, Weekday};
 
-const SIZE_OF_USIZE: usize = (usize::BITS / 8) as usize;
+static ALPHABET: &[u8] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".as_bytes();
 
-pub fn usize_as_bytes(n: usize) -> [u8; SIZE_OF_USIZE] {
-  let mut res = [0u8; SIZE_OF_USIZE];
-  let mut n = n;
-  for i in 0..SIZE_OF_USIZE {
-    res[i] = ((n >> (8 * i)) & 0xff) as u8;
-    n = n >> i;
+#[macro_export]
+macro_rules! num_as_bytes {
+  ($n: expr, $tt:ty) => {{
+    let mut res = [0u8; (<$tt>::BITS / 8) as usize];
+    let mut n = $n;
+    for i in 0..(<$tt>::BITS / 8) as usize {
+      res[i] = ((n >> (8 * i)) & 0xff) as u8;
+      n = n >> i;
+    }
+    res
+  }};
+}
+
+pub(crate) fn bytes_as_str(bytes: &[u8]) -> String {
+  let len = ALPHABET.len();
+  let mut res = String::with_capacity(512 >> 3);
+  for &byte in bytes {
+    let byte = byte as usize;
+    let index = byte - (len * (byte / len));
+    let ch = ALPHABET[index] as char;
+    res.push(ch)
   }
+
   res
 }
 
