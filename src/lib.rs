@@ -1,11 +1,11 @@
-extern crate maiq_structs;
+extern crate maiq_shared;
 
 #[macro_use]
 extern crate lazy_static;
 
 pub use fetch::{fetch, Fetch, Fetched};
 use log::info;
-pub use maiq_structs::*;
+pub use maiq_shared::*;
 pub use parser::parse;
 
 use chrono::{DateTime, Utc};
