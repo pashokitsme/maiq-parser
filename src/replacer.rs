@@ -1,33 +1,7 @@
 use std::fs;
 
-use chrono::{Datelike, Weekday};
-use maiq_shared::{utils, Lesson};
-use serde::{Deserialize, Serialize};
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct DefaultDay {
-  pub day: Weekday,
-  pub groups: Vec<DefaultGroup>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct DefaultGroup {
-  pub name: String,
-  pub lessons: Vec<DefaultLesson>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct DefaultLesson {
-  pub num: usize,
-  pub name: String,
-  pub is_even: Option<bool>,
-  #[serde(skip_serializing_if = "Option::is_none")]
-  pub subgroup: Option<usize>,
-  #[serde(skip_serializing_if = "Option::is_none")]
-  pub teacher: Option<String>,
-  #[serde(skip_serializing_if = "Option::is_none")]
-  pub classroom: Option<String>,
-}
+use chrono::Datelike;
+use maiq_shared::{default::DefaultDay, utils, Lesson};
 
 lazy_static! {
   static ref FILE_NAMES: [&'static str; 6] = ["mon", "tue", "wed", "thu", "fri", "sat"];
