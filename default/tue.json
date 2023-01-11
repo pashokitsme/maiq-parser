@@ -1,5 +1,5 @@
 {
-  "day": "tue", 
+  "day": "tue",
   "groups": [
     {
       "name": "Ир3-21",
@@ -24,7 +24,7 @@
         },
         {
           "num": 4,
-          "at_even": false,
+          "is_even": true,
           "name": "Основы проектирования баз данных",
           "teacher": "Ордяков Д.Е.",
           "classroom": "210М"
