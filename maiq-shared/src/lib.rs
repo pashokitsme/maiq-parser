@@ -1,3 +1,4 @@
+pub mod default;
 pub mod utils;
 
 use chrono::{DateTime, Duration, Utc};
@@ -54,6 +55,16 @@ impl Snapshot {
     now(0) - self.parsed_date
   }
 
+  pub fn tiny<'a>(&self, group: &'a str) -> TinySnapshot {
+    let group = self
+      .groups
+      .iter()
+      .find(|g| g.name == group)
+      .and_then(|g| Some(g.to_owned()));
+
+    TinySnapshot { uid: self.uid.clone(), date: self.date, parsed_date: self.parsed_date, group }
+  }
+
   fn get_hash(groups: &Vec<Group>) -> String {
     let mut hasher = Sha256::new();
     for group in groups {
@@ -69,4 +80,12 @@ impl Snapshot {
 
     bytes_as_str(&hasher.finalize()[..])
   }
+}
+
+#[derive(Debug, Serialize, Clone)]
+pub struct TinySnapshot {
+  pub uid: String,
+  pub date: DateTime<Utc>,
+  pub parsed_date: DateTime<Utc>,
+  pub group: Option<Group>,
 }

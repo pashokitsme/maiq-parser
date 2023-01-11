@@ -1,6 +1,4 @@
-use std::{fs, time::Duration};
-
-use maiq_parser::{parser, warmup_defaults, Fetched};
+use maiq_parser::{fetch_n_parse, warmup_defaults, Fetch};
 use maiq_shared::Snapshot;
 
 // ? It's just a junk file for test something
@@ -12,11 +10,12 @@ async fn main() {
   dotenvy::dotenv().unwrap();
   warmup_defaults();
 
-  let html = fs::read_to_string("dummy/1.html").unwrap();
-  let fetched = Fetched { html, took: Duration::from_secs(1), etag: "123".into(), fetch_mode: maiq_parser::Fetch::Today };
-  let parsed = parser::parse(&fetched).await.unwrap();
+  // let html = fs::read_to_string("dummy/1.html").unwrap();
+  // let fetched = Fetched { html, took: Duration::from_secs(1), etag: "123".into(), fetch_mode: maiq_parser::Fetch::Tomorrow };
+  // let parsed = parser::parse(&fetched).await.unwrap();
+  let fetched = fetch_n_parse(&Fetch::Tomorrow).await.unwrap().snapshot;
   // println!("{}", parsed.uid)
-  print_snapshot(&parsed)
+  print_snapshot(&fetched)
   // println!("{:#?}", *replacer::REPLECEMENTS)
   // let date = Utc::now()
   //   .date_naive()
