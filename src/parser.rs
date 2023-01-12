@@ -34,7 +34,7 @@ lazy_static! {
 
 // todo: rewrite table_extract with tl crate
 // todo: parse row and then use it instead of parsing parts of it
-pub async fn parse(fetched: &Fetched) -> Result<Snapshot, ParserError> {
+pub fn parse(fetched: &Fetched) -> Result<Snapshot, ParserError> {
   let table = match table_extract::Table::find_first(&fetched.html) {
     Some(x) => x,
     None => return Err(ParserError::NotYet),

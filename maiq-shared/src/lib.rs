@@ -89,3 +89,21 @@ pub struct TinySnapshot {
   pub parsed_date: DateTime<Utc>,
   pub group: Option<Group>,
 }
+
+pub enum Fetch {
+  Today,
+  Next,
+}
+
+pub trait FetchUrl {
+  fn url(&self) -> &'static str;
+}
+
+impl FetchUrl for Fetch {
+  fn url(&self) -> &'static str {
+    match self {
+      Fetch::Today => "https://rsp.chemk.org/4korp/today.htm",
+      Fetch::Next => "https://rsp.chemk.org/4korp/tomorrow.htm",
+    }
+  }
+}
