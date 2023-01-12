@@ -73,8 +73,8 @@ impl Snapshot {
         hasher.update(lesson.classroom.clone().unwrap_or_default().as_bytes());
         hasher.update(lesson.teacher.clone().unwrap_or_default().as_bytes());
         hasher.update(lesson.name.as_bytes());
-        hasher.update(&num_as_bytes!(lesson.subgroup.unwrap_or(0), usize));
-        hasher.update(&num_as_bytes!(lesson.num, usize));
+        hasher.update(&num_as_bytes!(lesson.subgroup.unwrap_or(0), u8));
+        hasher.update(&num_as_bytes!(lesson.num, u8));
       }
     }
 
