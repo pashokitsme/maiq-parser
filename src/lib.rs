@@ -1,32 +1,23 @@
-extern crate maiq_shared;
-
 #[macro_use]
 extern crate lazy_static;
 
-pub use fetch::{fetch, Fetch, Fetched};
+use fetch::FetchUrl;
 use log::info;
+
+use error::ParserError;
+
+pub use fetch::{fetch, Fetched};
 pub use maiq_shared::*;
 pub use parser::parse;
-
-use chrono::{DateTime, Utc};
-use error::ParserError;
 
 pub mod error;
 pub mod fetch;
 pub mod parser;
 pub mod replacer;
 
-pub struct Parsed {
-  pub raw: Fetched,
-  pub snapshot: Snapshot,
-  pub date: DateTime<Utc>,
-}
-
-pub async fn fetch_n_parse(mode: &Fetch) -> Result<Parsed, ParserError> {
-  let date = chrono::Utc::now();
-  let raw = fetch(mode.to_owned()).await?;
-  let snapshot = parse(&raw).await?;
-  Ok(Parsed { raw, snapshot, date })
+pub async fn fetch_snapshot<T: FetchUrl>(mode: T) -> Result<Snapshot, ParserError> {
+  let raw = fetch(mode).await?;
+  parse(&raw)
 }
 
 pub fn warmup_defaults() {

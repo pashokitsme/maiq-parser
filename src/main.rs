@@ -1,4 +1,4 @@
-use maiq_parser::{fetch_n_parse, warmup_defaults, Fetch};
+use maiq_parser::warmup_defaults;
 use maiq_shared::Snapshot;
 
 // ? It's just a junk file for test something
@@ -13,9 +13,9 @@ async fn main() {
   // let html = fs::read_to_string("dummy/1.html").unwrap();
   // let fetched = Fetched { html, took: Duration::from_secs(1), etag: "123".into(), fetch_mode: maiq_parser::Fetch::Tomorrow };
   // let parsed = parser::parse(&fetched).await.unwrap();
-  let fetched = fetch_n_parse(&Fetch::Tomorrow).await.unwrap().snapshot;
+  // let fetched = fetch_snapshot(&Fetch::Tomorrow).await.unwrap().snapshot;
   // println!("{}", parsed.uid)
-  print_snapshot(&fetched)
+  // print_snapshot(&fetched)
   // println!("{:#?}", *replacer::REPLECEMENTS)
   // let date = Utc::now()
   //   .date_naive()
