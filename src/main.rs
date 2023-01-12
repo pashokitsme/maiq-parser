@@ -1,4 +1,4 @@
-use maiq_parser::warmup_defaults;
+use maiq_parser::{fetch_snapshot, warmup_defaults, Fetch};
 use maiq_shared::Snapshot;
 
 // ? It's just a junk file for test something
@@ -9,6 +9,9 @@ use maiq_shared::Snapshot;
 async fn main() {
   dotenvy::dotenv().unwrap();
   warmup_defaults();
+
+  let snapshot = fetch_snapshot(Fetch::Today).await.unwrap();
+  println!("{}", snapshot.uid);
 
   // let html = fs::read_to_string("dummy/1.html").unwrap();
   // let fetched = Fetched { html, took: Duration::from_secs(1), etag: "123".into(), fetch_mode: maiq_parser::Fetch::Tomorrow };
