@@ -1,6 +1,6 @@
 use chrono::{DateTime, Datelike, Days, Duration, Timelike, Utc, Weekday};
 
-static ALPHABET: &[u8] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".as_bytes();
+static ALPHABET: &[u8] = "0123456789abcdefghijklmnopqrstuvwxyz".as_bytes();
 
 #[macro_export]
 macro_rules! num_as_bytes {
@@ -17,9 +17,9 @@ macro_rules! num_as_bytes {
 
 pub(crate) fn bytes_as_str(bytes: &[u8]) -> String {
   let len = ALPHABET.len();
-  let mut res = String::with_capacity(512 >> 3);
+  let mut res = String::new();
   for b in bytes.chunks_exact(3) {
-    let byte = b[0] as usize + b[1] as usize + b[2] as usize;
+    let byte = b[0] as usize ^ b[1] as usize ^ b[2] as usize;
     let index = byte - (len * (byte / len));
     let ch = ALPHABET[index] as char;
     res.push(ch)
