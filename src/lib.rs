@@ -1,8 +1,8 @@
 #[macro_use]
 extern crate lazy_static;
 
-use fetch::FetchUrl;
 use log::info;
+use maiq_shared::FetchUrl;
 
 use error::ParserError;
 

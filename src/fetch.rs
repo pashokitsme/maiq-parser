@@ -1,10 +1,7 @@
 use std::time::Duration;
 
+use maiq_shared::FetchUrl;
 use stopwatch::Stopwatch;
-
-pub trait FetchUrl {
-  fn url(&self) -> &'static str;
-}
 
 pub struct Fetched {
   pub html: String,
