@@ -8,7 +8,7 @@ lazy_static! {
   pub static ref REPLECEMENTS: Vec<DefaultDay> = load_defaults();
 }
 
-pub fn replace<'a>(num: usize, group_name: &'a str, is_even: bool, date_offset: i64) -> Option<Lesson> {
+pub fn replace<'a>(num: u8, group_name: &'a str, is_even: bool, date_offset: i64) -> Option<Lesson> {
   let now = utils::now_date(date_offset).date_naive().weekday();
   REPLECEMENTS
     .iter()

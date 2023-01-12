@@ -15,14 +15,14 @@ pub struct DefaultGroup {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct DefaultLesson {
-  pub num: usize,
+  pub num: u8,
   pub name: String,
 
   #[serde(skip_serializing_if = "Option::is_none")]
   pub is_even: Option<bool>,
 
   #[serde(skip_serializing_if = "Option::is_none")]
-  pub subgroup: Option<usize>,
+  pub subgroup: Option<u8>,
 
   #[serde(skip_serializing_if = "Option::is_none")]
   pub teacher: Option<String>,
