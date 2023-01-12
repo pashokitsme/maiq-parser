@@ -11,7 +11,7 @@ use crate::{fetch::Fetched, replacer, ParserError};
 #[derive(Clone)]
 struct ParsedLesson {
   pub group: String,
-  pub nums: Vec<usize>,
+  pub nums: Vec<u8>,
   pub lesson: Lesson,
 }
 
@@ -83,7 +83,7 @@ fn parse_lesson(row: &Row, prev: &Option<ParsedLesson>) -> Result<Option<ParsedL
     let mut group_n_subgroup = group_n_subgroup.split(&[' ', ' ']);
     let group = group_n_subgroup.next().unwrap().trim();
     let subgroup = match group_n_subgroup.next() {
-      Some(x) => x.trim().parse::<usize>().ok(),
+      Some(x) => x.trim().parse::<u8>().ok(),
       None => None,
     };
     (group.to_string(), subgroup.clone())
@@ -94,9 +94,9 @@ fn parse_lesson(row: &Row, prev: &Option<ParsedLesson>) -> Result<Option<ParsedL
 
   let nums_binding = as_text(&row.next().unwrap());
 
-  let mut nums: Vec<usize> = vec![];
+  let mut nums: Vec<u8> = vec![];
   for num in nums_binding.split(',') {
-    let num = match num.parse::<usize>().ok() {
+    let num = match num.parse::<u8>().ok() {
       Some(x) => x,
       None => match prev {
         Some(x) => x.lesson.num,

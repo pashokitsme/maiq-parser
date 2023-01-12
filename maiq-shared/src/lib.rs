@@ -16,10 +16,10 @@ pub struct Group {
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Lesson {
-  pub num: usize,
+  pub num: u8,
   pub name: String,
   #[serde(skip_serializing_if = "Option::is_none")]
-  pub subgroup: Option<usize>,
+  pub subgroup: Option<u8>,
   #[serde(skip_serializing_if = "Option::is_none")]
   pub teacher: Option<String>,
   #[serde(skip_serializing_if = "Option::is_none")]
