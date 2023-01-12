@@ -162,6 +162,9 @@ fn map_lessons_to_groups(vec: &Vec<ParsedLesson>, is_even: bool, date_offset: i6
       group.lessons.push(lesson.unwrap_or_else(|| {
         let mut lesson = parsed.lesson.clone();
         lesson.num = *num;
+        if parsed.lesson.classroom.is_some() {
+          lesson.classroom = parsed.lesson.classroom.clone()
+        }
         lesson
       }))
     }
