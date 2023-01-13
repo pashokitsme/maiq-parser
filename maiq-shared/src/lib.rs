@@ -8,10 +8,38 @@ use utils::bytes_as_str;
 
 use crate::utils::now;
 
+pub trait Uid {
+  fn uid(&self) -> String {
+    bytes_as_str(&self.uid_bytes())
+  }
+
+  fn uid_bytes(&self) -> [u8; 32];
+}
+
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Group {
+  pub uid: String,
   pub name: String,
   pub lessons: Vec<Lesson>,
+}
+
+impl Group {
+  pub fn new(name: String) -> Self {
+    let mut g = Self { uid: String::with_capacity(10), name, lessons: vec![] };
+    g.uid = g.uid();
+    g
+  }
+}
+
+impl Uid for Group {
+  fn uid_bytes(&self) -> [u8; 32] {
+    let mut hasher = Sha256::new();
+    let mut res = [0u8; 32];
+    hasher.update(&self.name);
+    self.lessons.iter().for_each(|l| hasher.update(l.uid_bytes()));
+    hasher.finalize_into((&mut res).into());
+    res
+  }
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -26,6 +54,20 @@ pub struct Lesson {
   pub classroom: Option<String>,
 }
 
+impl Uid for Lesson {
+  fn uid_bytes<'a>(&'a self) -> [u8; 32] {
+    let mut hasher = Sha256::new();
+    let mut res = [0u8; 32];
+    hasher.update(self.classroom.clone().unwrap_or_default().as_bytes());
+    hasher.update(self.teacher.clone().unwrap_or_default().as_bytes());
+    hasher.update(self.name.as_bytes());
+    hasher.update(&num_as_bytes!(self.subgroup.unwrap_or(0), u8));
+    hasher.update(&num_as_bytes!(self.num, u8));
+    hasher.finalize_into((&mut res).into());
+    res
+  }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Snapshot {
   pub date: DateTime<Utc>,
@@ -36,11 +78,11 @@ pub struct Snapshot {
 }
 
 impl Snapshot {
-  /// `date` is `None` = today.
   pub fn new(groups: Vec<Group>, is_even: bool, date: DateTime<Utc>) -> Self {
     let now = chrono::Utc::now() + Duration::hours(3);
-    let hash = Self::get_hash(&groups);
-    Self { date, uid: hash, is_week_even: is_even, groups, parsed_date: now }
+    let mut s = Self { date, uid: String::with_capacity(10), is_week_even: is_even, groups, parsed_date: now };
+    s.uid = s.uid();
+    s
   }
 
   pub fn group<'n, 'g>(&'g self, name: &'n str) -> Option<&'g Group> {
@@ -64,21 +106,15 @@ impl Snapshot {
 
     TinySnapshot { uid: self.uid.clone(), date: self.date, parsed_date: self.parsed_date, group }
   }
+}
 
-  fn get_hash(groups: &Vec<Group>) -> String {
+impl Uid for Snapshot {
+  fn uid_bytes(&self) -> [u8; 32] {
     let mut hasher = Sha256::new();
-    for group in groups {
-      hasher.update(group.name.as_bytes());
-      for lesson in &group.lessons {
-        hasher.update(lesson.classroom.clone().unwrap_or_default().as_bytes());
-        hasher.update(lesson.teacher.clone().unwrap_or_default().as_bytes());
-        hasher.update(lesson.name.as_bytes());
-        hasher.update(&num_as_bytes!(lesson.subgroup.unwrap_or(0), u8));
-        hasher.update(&num_as_bytes!(lesson.num, u8));
-      }
-    }
-
-    bytes_as_str(&hasher.finalize()[..])
+    let mut res = [0u8; 32];
+    self.groups.iter().for_each(|g| hasher.update(&g.uid_bytes()));
+    hasher.finalize_into((&mut res).into());
+    res
   }
 }
 

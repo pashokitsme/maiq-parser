@@ -23,15 +23,6 @@ lazy_static! {
   static ref CORASICK_REPLACE_PATTERNS: [&'static str; 3] = [" ", " ", ""];
 }
 
-/*
-  static ref CORASICK: AhoCorasick = AhoCorasickBuilder::new().ascii_case_insensitive(true).build(&[
-    "  ", "\t", "\n", "\r", " ", "\u{0085}", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", " ", "\u{200B}",
-    "\u{2028}", "\u{2029}", "　", "\u{FEFF}"
-  ]);
-  static ref CORASICK_REPLACE_PATTERNS: [&'static str; 24] =
-    [" ", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""];
-*/
-
 // todo: rewrite table_extract with tl crate
 // todo: parse row and then use it instead of parsing parts of it
 pub fn parse(fetched: &Fetched) -> Result<Snapshot, ParserError> {
@@ -111,7 +102,7 @@ fn parse_lesson(row: &Row, prev: &Option<ParsedLesson>) -> Result<Option<ParsedL
     "Нет" => None,
     _ => match row.next() {
       Some(x) => match as_text(&x.as_str()).as_str() {
-        "" => None,
+        "" | " " | " " => None,
         x => Some(x.to_string()),
       },
       None => None,
@@ -149,7 +140,7 @@ fn map_lessons_to_groups(vec: &Vec<ParsedLesson>, is_even: bool, date_offset: i6
       let group = if let Some(x) = res.iter().position(|x| x.name.as_str() == name) {
         &mut res[x]
       } else {
-        res.push(Group { name: name.to_string(), lessons: vec![] });
+        res.push(Group::new(name.into()));
         res.last_mut().unwrap()
       };
 
