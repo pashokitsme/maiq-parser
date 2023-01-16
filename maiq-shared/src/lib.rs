@@ -1,7 +1,7 @@
 pub mod default;
 pub mod utils;
 
-use chrono::{DateTime, Duration, Utc};
+use chrono::{DateTime, Datelike, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use sha2::{digest::Digest, Sha256};
 use utils::bytes_as_str;
@@ -71,16 +71,15 @@ impl Uid for Lesson {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Snapshot {
   pub date: DateTime<Utc>,
-  pub is_week_even: bool,
   pub parsed_date: DateTime<Utc>,
   pub uid: String,
   pub groups: Vec<Group>,
 }
 
 impl Snapshot {
-  pub fn new(groups: Vec<Group>, is_even: bool, date: DateTime<Utc>) -> Self {
+  pub fn new(groups: Vec<Group>, date: DateTime<Utc>) -> Self {
     let now = chrono::Utc::now() + Duration::hours(3);
-    let mut s = Self { date, uid: String::with_capacity(10), is_week_even: is_even, groups, parsed_date: now };
+    let mut s = Self { date, uid: String::with_capacity(10), groups, parsed_date: now };
     s.uid = s.uid();
     s
   }
@@ -95,6 +94,10 @@ impl Snapshot {
 
   pub fn age(&self) -> Duration {
     now(0) - self.parsed_date
+  }
+
+  pub fn is_even(&self) -> bool {
+    self.date.iso_week().week() % 2 != 0
   }
 
   pub fn tiny<'a>(&self, group: &'a str) -> TinySnapshot {

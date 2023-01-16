@@ -7,14 +7,15 @@ use maiq_shared::Snapshot;
 #[allow(dead_code, unused_variables)]
 #[tokio::main]
 async fn main() {
-  dotenvy::dotenv().unwrap();
+  dotenvy::dotenv().ok();
   warmup_defaults();
 
-  let snapshot = fetch_snapshot(Fetch::Today).await.unwrap();
-  println!("{}", snapshot.uid);
-  for group in snapshot.groups {
-    println!("{}: {}", group.name, group.uid)
-  }
+  let snapshot = fetch_snapshot(Fetch::Next).await.unwrap();
+  print_snapshot(&snapshot);
+  // println!("{}", snapshot.uid);
+  // for group in snapshot.groups {
+  //   println!("{}: {}", group.name, group.uid)
+  // }
 
   // let html = fs::read_to_string("dummy/1.html").unwrap();
   // let fetched = Fetched { html, took: Duration::from_secs(1), etag: "123".into(), fetch_mode: maiq_parser::Fetch::Tomorrow };

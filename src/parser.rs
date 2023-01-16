@@ -1,6 +1,6 @@
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder};
 
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Datelike, Utc};
 use maiq_shared::*;
 use regex::Regex;
 use scraper::Html;
@@ -42,23 +42,17 @@ pub fn parse(fetched: &Fetched) -> Result<Snapshot, ParserError> {
     }
   }
 
-  let groups = map_lessons_to_groups(&lessons, date.1, date.2);
+  let groups = map_lessons_to_groups(&lessons, date.0.iso_week().week() % 2 != 0, date.1);
 
-  Ok(Snapshot::new(groups, date.1, date.0))
+  Ok(Snapshot::new(groups, date.0))
 }
 
-fn parse_date(row: &Row) -> (DateTime<Utc>, bool, i64) {
+fn parse_date(row: &Row) -> (DateTime<Utc>, i64) {
   let full_str_binding = as_text(row.iter().next().unwrap());
-  let mut iter = full_str_binding.trim().split(' ').rev();
-  let even_or_not = match iter.next().unwrap() {
-    "(числитель)" => false,
-    "(знаменатель)" => true,
-    // ? Is it really neseccery to beware of this?
-    _ => false,
-  };
-  let weekday = iter.skip(1).next().unwrap();
+  let iter = full_str_binding.trim().split(' ').rev();
+  let weekday = iter.skip(2).next().unwrap();
   let date = utils::map_day(&utils::now_date(0), weekday);
-  (date.0, even_or_not, date.1)
+  (date.0, date.1)
 }
 
 // ? Idk how it works :(
