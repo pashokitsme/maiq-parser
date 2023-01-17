@@ -82,7 +82,7 @@ fn parse_lesson(row: &Row, prev: &Option<ParsedLesson>) -> Result<Option<ParsedL
   let mut nums: Vec<u8> = vec![];
   for num in nums_binding.split(',') {
     let num = match num.parse::<u8>().ok() {
-      Some(x) => x - 1,
+      Some(x) => x,
       None => match prev {
         Some(x) => x.lesson.num,
         None => return Ok(None),
