@@ -138,18 +138,21 @@ fn map_lessons_to_groups(vec: &Vec<ParsedLesson>, is_even: bool, date_offset: i6
         res.last_mut().unwrap()
       };
 
-      let lesson = if parsed.lesson.name.as_str() == "По расписанию" {
+      let mut lesson = if parsed.lesson.name.as_str() == "По расписанию" {
         replacer::replace(*num, &parsed.group, is_even, date_offset)
       } else {
         None
       };
 
+      if parsed.lesson.classroom.is_some() {
+        if let Some(l) = lesson.as_mut() {
+          l.classroom = parsed.lesson.classroom.clone()
+        }
+      }
+
       group.lessons.push(lesson.unwrap_or_else(|| {
         let mut lesson = parsed.lesson.clone();
         lesson.num = *num;
-        if parsed.lesson.classroom.is_some() {
-          lesson.classroom = parsed.lesson.classroom.clone()
-        }
         lesson
       }))
     }
