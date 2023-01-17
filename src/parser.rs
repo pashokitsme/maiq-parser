@@ -127,7 +127,7 @@ fn map_lessons_to_groups(vec: &Vec<ParsedLesson>, is_even: bool, date_offset: i6
   let mut res: Vec<Group> = vec![];
   for parsed in vec {
     for num in &parsed.nums {
-      if *num < 1 {
+      if *num < 1 || parsed.lesson.name.as_str() == "Нет" {
         continue;
       }
       let name = parsed.group.as_str().clone();
