@@ -158,7 +158,10 @@ fn map_lessons_to_groups(vec: &Vec<ParsedLesson>, is_even: bool, date_offset: i6
     }
   }
 
-  res.iter_mut().for_each(|g| g.lessons.sort_by_key(|k| k.num));
+  res.iter_mut().for_each(|g| {
+    g.lessons.sort_by_key(|k| k.num);
+    g.uid = g.uid()
+  });
   res
 }
 
