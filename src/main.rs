@@ -47,7 +47,7 @@ async fn main() {
 fn print_snapshot(s: &Snapshot) {
   println!("{} от {}\n", s.uid, s.date);
   for group in &s.groups {
-    println!("Группа {}", group.name);
+    println!("Группа {} #{}", group.name, group.uid);
     for lesson in &group.lessons {
       print!("\t#{} ", lesson.num);
       if let Some(sub) = lesson.subgroup {
