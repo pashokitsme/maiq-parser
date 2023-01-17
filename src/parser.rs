@@ -97,7 +97,7 @@ fn parse_lesson(row: &Row, prev: &Option<ParsedLesson>) -> Result<Option<ParsedL
     _ => match row.next() {
       Some(x) => match as_text(&x.as_str()).as_str() {
         "" | " " | " " => None,
-        x => Some(x.to_string()),
+        x => Some(x.trim().to_string()),
       },
       None => None,
     },
