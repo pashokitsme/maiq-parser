@@ -23,7 +23,6 @@ lazy_static! {
 }
 
 // todo: rewrite table_extract with tl crate
-// todo: parse row and then use it instead of parsing parts of it
 pub fn parse(fetched: &Fetched) -> Result<Snapshot, ParserError> {
   let table = match table_extract::Table::find_first(&fetched.html) {
     Some(x) => x,
@@ -35,7 +34,6 @@ pub fn parse(fetched: &Fetched) -> Result<Snapshot, ParserError> {
   let date = parse_date(&table.next().unwrap());
   for row in table.skip(2) {
     let row = parse_row(&row);
-    println!("{:?}", row);
     let lesson = parse_lesson(row, &prev)?;
     if lesson.is_some() {
       prev = lesson.clone();
@@ -93,7 +91,6 @@ fn parse_lesson<'a>(row: Vec<Option<String>>, prev: &Option<ParsedLesson>) -> Re
   let teacher = row[4].clone();
   let classroom = row[5].clone();
 
-  // println!("{} {:?} {:?} {} {:?} {:?}", group, sub, nums, name, teacher, classroom);
   let lesson = Lesson { num: 0, subgroup, name, teacher, classroom };
   let parsed = ParsedLesson { group, nums, lesson };
   Ok(Some(parsed))
@@ -147,101 +144,8 @@ fn parse_row<'a>(row: &Row) -> Vec<Option<String>> {
   }
 
   r[5] = raw.next().and_then(|x| Some(x.trim().to_owned())); // classroom
-
-  // dbg!(&r);
   r
 }
-
-// Idk how it works :(
-/*
-fn parse_lesson(row: &Row, prev: &Option<ParsedLesson>) -> Result<Option<ParsedLesson>, ParserError> {
-  let mut row = row.iter().peekable();
-  println!("\n{}", row.clone().map(|x| format!("{} ", as_text(x))).collect::<String>());
-  if as_text(row.peek().unwrap()).is_empty() {
-    return Ok(None);
-  }
-
-  // * good
-  let (group, subgroup) = if is_group(&as_text(row.peek().unwrap())) {
-    let group_n_subgroup = as_text(row.next().unwrap());
-    let mut group_n_subgroup = group_n_subgroup.split(&[' ', ' ', '\n']);
-    let group = group_n_subgroup.next().unwrap().trim();
-    let subgroup = match group_n_subgroup.next() {
-      Some(x) => x.trim().parse::<u8>().ok(),
-      None => None,
-    };
-    (group.to_string(), subgroup.clone())
-  } else {
-    let cloned = prev.clone().unwrap();
-    (cloned.group, cloned.lesson.subgroup)
-  };
-
-  println!("G {} SG {:?}", group, subgroup);
-
-  let nums_binding = as_text(&row.peek().unwrap());
-  let nums_str = nums_binding.split(',').map(|x| x.trim()).collect::<Vec<&str>>();
-  println!("NUMS {:?}", nums_str);
-
-  let mut nums: Vec<u8> = vec![];
-
-  if nums_str.len() == 0 || nums_str[0].parse::<u8>().is_err() {
-    println!("CANT PARSE, prev: {:?}", prev);
-    nums.push(match prev {
-      Some(x) => x.lesson.num,
-      None => {
-        println!("PREV NONE");
-        return Ok(None);
-      }
-    });
-  } else {
-    for num in nums_str {
-      let num = match num.parse::<u8>().ok() {
-        Some(x) => x,
-        None => match prev {
-          Some(x) => x.lesson.num,
-          None => {
-            println!("PREV NONE");
-            return Ok(None);
-          }
-        },
-      };
-      nums.push(num);
-    }
-  }
-
-  let name_n_teacher = as_text(row.next().unwrap());
-  let classroom = match name_n_teacher.as_str() {
-    "Нет" => None,
-    _ => match row.next() {
-      Some(x) => match as_text(&x.as_str()).as_str() {
-        "" | " " | " " => None,
-        x => Some(x.trim().to_string()),
-      },
-      None => None,
-    },
-  };
-
-  // todo: rewrite this trash code
-  let name_n_teacher = name_n_teacher.split(',');
-  let count = name_n_teacher.clone().count();
-  if count > 1 {
-    let mut name = name_n_teacher
-      .clone()
-      .take(count - 1)
-      .map(|s| format!("{s},"))
-      .collect::<String>()
-      .trim()
-      .to_string();
-    name.pop();
-    let teacher = name_n_teacher.rev().next().and_then(|t| Some(t.trim().to_string()));
-    Ok(Some(ParsedLesson { group, nums, lesson: Lesson { num: 0, name, subgroup, teacher, classroom } }))
-  } else {
-    let name = name_n_teacher.collect::<String>().trim().to_string();
-    Ok(Some(ParsedLesson { group, nums, lesson: Lesson { num: 0, name, subgroup, teacher: None, classroom } }))
-  }
-}
-
-*/
 
 fn map_lessons_to_groups(vec: &Vec<ParsedLesson>, is_even: bool, date_offset: i64) -> Vec<Group> {
   let mut res: Vec<Group> = vec![];
