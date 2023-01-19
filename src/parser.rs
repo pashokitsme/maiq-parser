@@ -35,6 +35,7 @@ pub fn parse(fetched: &Fetched) -> Result<Snapshot, ParserError> {
   let date = parse_date(&table.next().unwrap());
   for row in table.skip(2) {
     let row = parse_row(&row);
+    println!("{:?}", row);
     let lesson = parse_lesson(row, &prev)?;
     if lesson.is_some() {
       prev = lesson.clone();
@@ -65,6 +66,10 @@ fn parse_lesson<'a>(row: Vec<Option<String>>, prev: &Option<ParsedLesson>) -> Re
     };
   }
 
+  if row.iter().all(|x| x.is_none()) {
+    return Ok(None);
+  }
+
   let (group, subgroup) = match (&row[0], &row[1]) {
     (Some(g), None) => (g.clone(), None),
     (Some(g), Some(s)) => (g.clone(), s.parse::<u8>().ok()),
@@ -85,11 +90,7 @@ fn parse_lesson<'a>(row: Vec<Option<String>>, prev: &Option<ParsedLesson>) -> Re
     None => prev!().lesson.name.clone(),
   };
 
-  let teacher = match &row[4] {
-    Some(x) => Some(x.clone()),
-    None => prev!().lesson.teacher.clone(),
-  };
-
+  let teacher = row[4].clone();
   let classroom = row[5].clone();
 
   // println!("{} {:?} {:?} {} {:?} {:?}", group, sub, nums, name, teacher, classroom);
@@ -127,20 +128,27 @@ fn parse_row<'a>(row: &Row) -> Vec<Option<String>> {
   {
     let iter = raw.next().unwrap();
     let name_n_teacher = iter.split(',');
-    r[4] = name_n_teacher.clone().last().and_then(|x| Some(x.trim().to_owned())); // teacher
-    let take = name_n_teacher.clone().count() - 1;
-    let name = name_n_teacher
-      .take(take)
-      .map(|x| x.trim())
-      .collect::<Vec<&str>>()
-      .join(", ");
-    r[3] = Some(name); // name
+
+    match name_n_teacher.clone().count() {
+      1 => r[3] = Some(name_n_teacher.map(|x| x.trim()).collect::<Vec<&str>>().join(", ")),
+      count if count > 0 => {
+        r[3] = Some(
+          name_n_teacher
+            .clone()
+            .take(count - 1)
+            .map(|x| x.trim())
+            .collect::<Vec<&str>>()
+            .join(", "),
+        );
+        r[4] = name_n_teacher.clone().last().and_then(|x| Some(x.trim().to_owned()));
+      }
+      _ => (),
+    };
   }
 
   r[5] = raw.next().and_then(|x| Some(x.trim().to_owned())); // classroom
 
   // dbg!(&r);
-  // println!("{:?}", r);
   r
 }
 

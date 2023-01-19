@@ -11,7 +11,7 @@ async fn main() {
   warmup_defaults();
 
   let snapshot = fetch_snapshot(Fetch::Today).await.unwrap();
-  // println!("{:#?}", snapshot.group("Ир1-19").unwrap())
+  println!("{:#?}", snapshot.group("Ир1-19").unwrap())
   // print_snapshot(&snapshot);
   // println!("{}", snapshot.uid);
   // for group in snapshot.groups {
