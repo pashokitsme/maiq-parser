@@ -54,7 +54,7 @@ fn parse_date(row: &Row) -> (DateTime<Utc>, i64) {
   (date.0, date.1)
 }
 
-fn parse_lesson<'a>(row: Vec<Option<String>>, prev: &Option<ParsedLesson>) -> Result<Option<ParsedLesson>, ParserError> {
+fn parse_lesson(row: Vec<Option<String>>, prev: &Option<ParsedLesson>) -> Result<Option<ParsedLesson>, ParserError> {
   macro_rules! prev {
     () => {
       match prev {
@@ -96,7 +96,7 @@ fn parse_lesson<'a>(row: Vec<Option<String>>, prev: &Option<ParsedLesson>) -> Re
   Ok(Some(parsed))
 }
 
-fn parse_row<'a>(row: &Row) -> Vec<Option<String>> {
+fn parse_row(row: &Row) -> Vec<Option<String>> {
   lazy_static! {
     static ref GROUP_REGEX: Regex = Regex::new(r#"[А-я]{1,2}\d-\d{2}"#).unwrap();
     static ref NUM_REGEX: Regex = Regex::new(r#"^(\d{1},{0,1})*$"#).unwrap();
