@@ -10,8 +10,9 @@ async fn main() {
   dotenvy::dotenv().ok();
   warmup_defaults();
 
-  let snapshot = fetch_snapshot(Fetch::Next).await.unwrap();
-  print_snapshot(&snapshot);
+  let snapshot = fetch_snapshot(Fetch::Today).await.unwrap();
+  // println!("{:#?}", snapshot.group("Ир1-19").unwrap())
+  // print_snapshot(&snapshot);
   // println!("{}", snapshot.uid);
   // for group in snapshot.groups {
   //   println!("{}: {}", group.name, group.uid)

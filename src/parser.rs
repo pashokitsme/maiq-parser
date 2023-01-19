@@ -8,7 +8,7 @@ use table_extract::Row;
 
 use crate::{fetch::Fetched, replacer, ParserError};
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 struct ParsedLesson {
   pub group: String,
   pub nums: Vec<u8>,
@@ -16,7 +16,6 @@ struct ParsedLesson {
 }
 
 lazy_static! {
-  static ref GROUP_REGEX: Regex = Regex::new(r#"[А-я]{1,2}\d-\d{2}"#).unwrap();
   static ref CORASICK: AhoCorasick = AhoCorasickBuilder::new()
     .ascii_case_insensitive(true)
     .build(&["  ", " ", "\n"]);
@@ -35,6 +34,7 @@ pub fn parse(fetched: &Fetched) -> Result<Snapshot, ParserError> {
   let mut prev: Option<ParsedLesson> = None;
   let date = parse_date(&table.next().unwrap());
   for row in table.skip(2) {
+    let row = parse_row(&row);
     let lesson = parse_lesson(&row, &prev)?;
     if lesson.is_some() {
       prev = lesson.clone();
@@ -55,17 +55,69 @@ fn parse_date(row: &Row) -> (DateTime<Utc>, i64) {
   (date.0, date.1)
 }
 
-// ? Idk how it works :(
+fn parse_lesson<'a>(row: &Vec<Option<String>>, prev: &Option<ParsedLesson>) -> Result<Option<ParsedLesson>, ParserError> {
+  // println!("{:#?}", row);
+  Ok(None)
+}
+
+fn parse_row<'a>(row: &Row) -> Vec<Option<String>> {
+  lazy_static! {
+    static ref GROUP_REGEX: Regex = Regex::new(r#"[А-я]{1,2}\d-\d{2}"#).unwrap();
+    static ref NUM_REGEX: Regex = Regex::new(r#"^(\d{1},{0,1})*$"#).unwrap();
+  }
+
+  let mut r = vec![None; 6];
+
+  let mut raw = row.iter().map(|x| as_text(x)).filter(|x| x != " ").peekable();
+
+  if raw.peek() == None {
+    return r;
+  }
+
+  if GROUP_REGEX.is_match(raw.peek().unwrap()) {
+    let binding = raw.next().unwrap();
+    let mut iter = binding.split(&[' ', ' ', '\n']);
+    r[0] = iter.next().and_then(|x| Some(x.trim().to_owned())); // group
+    r[1] = iter.next().and_then(|x| Some(x.trim().to_owned())); // subgroup
+  }
+
+  match NUM_REGEX.is_match(raw.peek().unwrap()) {
+    true => r[2] = Some(raw.next().unwrap().trim().to_owned()), // num
+    false => (),
+  }
+
+  {
+    let iter = raw.next().unwrap();
+    let name_n_teacher = iter.split(',');
+    r[4] = name_n_teacher.clone().last().and_then(|x| Some(x.trim().to_owned())); // teacher
+    let take = name_n_teacher.clone().count() - 1;
+    let name = name_n_teacher
+      .take(take)
+      .map(|x| x.trim())
+      .collect::<Vec<&str>>()
+      .join(", ");
+    r[3] = Some(name); // name
+  }
+
+  r[5] = raw.next().and_then(|x| Some(x.trim().to_owned())); // classroom
+
+  dbg!(&r);
+  r
+}
+
+// Idk how it works :(
+/*
 fn parse_lesson(row: &Row, prev: &Option<ParsedLesson>) -> Result<Option<ParsedLesson>, ParserError> {
   let mut row = row.iter().peekable();
-  // println!("{}", row.clone().map(|x| as_text(x)).collect::<String>());
+  println!("\n{}", row.clone().map(|x| format!("{} ", as_text(x))).collect::<String>());
   if as_text(row.peek().unwrap()).is_empty() {
     return Ok(None);
   }
 
+  // * good
   let (group, subgroup) = if is_group(&as_text(row.peek().unwrap())) {
     let group_n_subgroup = as_text(row.next().unwrap());
-    let mut group_n_subgroup = group_n_subgroup.split(&[' ', ' ']);
+    let mut group_n_subgroup = group_n_subgroup.split(&[' ', ' ', '\n']);
     let group = group_n_subgroup.next().unwrap().trim();
     let subgroup = match group_n_subgroup.next() {
       Some(x) => x.trim().parse::<u8>().ok(),
@@ -77,18 +129,37 @@ fn parse_lesson(row: &Row, prev: &Option<ParsedLesson>) -> Result<Option<ParsedL
     (cloned.group, cloned.lesson.subgroup)
   };
 
-  let nums_binding = as_text(&row.next().unwrap());
+  println!("G {} SG {:?}", group, subgroup);
+
+  let nums_binding = as_text(&row.peek().unwrap());
+  let nums_str = nums_binding.split(',').map(|x| x.trim()).collect::<Vec<&str>>();
+  println!("NUMS {:?}", nums_str);
 
   let mut nums: Vec<u8> = vec![];
-  for num in nums_binding.split(',') {
-    let num = match num.parse::<u8>().ok() {
-      Some(x) => x,
-      None => match prev {
-        Some(x) => x.lesson.num,
-        None => return Ok(None),
-      },
-    };
-    nums.push(num);
+
+  if nums_str.len() == 0 || nums_str[0].parse::<u8>().is_err() {
+    println!("CANT PARSE, prev: {:?}", prev);
+    nums.push(match prev {
+      Some(x) => x.lesson.num,
+      None => {
+        println!("PREV NONE");
+        return Ok(None);
+      }
+    });
+  } else {
+    for num in nums_str {
+      let num = match num.parse::<u8>().ok() {
+        Some(x) => x,
+        None => match prev {
+          Some(x) => x.lesson.num,
+          None => {
+            println!("PREV NONE");
+            return Ok(None);
+          }
+        },
+      };
+      nums.push(num);
+    }
   }
 
   let name_n_teacher = as_text(row.next().unwrap());
@@ -122,6 +193,8 @@ fn parse_lesson(row: &Row, prev: &Option<ParsedLesson>) -> Result<Option<ParsedL
     Ok(Some(ParsedLesson { group, nums, lesson: Lesson { num: 0, name, subgroup, teacher: None, classroom } }))
   }
 }
+
+*/
 
 fn map_lessons_to_groups(vec: &Vec<ParsedLesson>, is_even: bool, date_offset: i64) -> Vec<Group> {
   let mut res: Vec<Group> = vec![];
@@ -168,8 +241,4 @@ fn map_lessons_to_groups(vec: &Vec<ParsedLesson>, is_even: bool, date_offset: i6
 fn as_text(html: &str) -> String {
   let frag = Html::parse_fragment(html);
   CORASICK.replace_all(frag.root_element().text().collect::<String>().as_str(), CORASICK_REPLACE_PATTERNS.as_slice())
-}
-
-fn is_group(pattern: &str) -> bool {
-  GROUP_REGEX.is_match(pattern)
 }
