@@ -35,7 +35,7 @@ pub fn parse(fetched: &Fetched) -> Result<Snapshot, ParserError> {
   let date = parse_date(&table.next().unwrap());
   for row in table.skip(2) {
     let row = parse_row(&row);
-    let lesson = parse_lesson(&row, &prev)?;
+    let lesson = parse_lesson(row, &prev)?;
     if lesson.is_some() {
       prev = lesson.clone();
       lessons.push(lesson.unwrap());
@@ -55,9 +55,47 @@ fn parse_date(row: &Row) -> (DateTime<Utc>, i64) {
   (date.0, date.1)
 }
 
-fn parse_lesson<'a>(row: &Vec<Option<String>>, prev: &Option<ParsedLesson>) -> Result<Option<ParsedLesson>, ParserError> {
-  // println!("{:#?}", row);
-  Ok(None)
+fn parse_lesson<'a>(row: Vec<Option<String>>, prev: &Option<ParsedLesson>) -> Result<Option<ParsedLesson>, ParserError> {
+  macro_rules! prev {
+    () => {
+      match prev {
+        Some(x) => x,
+        None => return Ok(None),
+      }
+    };
+  }
+
+  let (group, subgroup) = match (&row[0], &row[1]) {
+    (Some(g), None) => (g.clone(), None),
+    (Some(g), Some(s)) => (g.clone(), s.parse::<u8>().ok()),
+    (None, Some(s)) => (prev!().group.clone(), s.parse::<u8>().ok()),
+    (None, None) => match prev {
+      Some(x) => (x.group.clone(), x.lesson.subgroup.clone()),
+      None => return Ok(None),
+    },
+  };
+
+  let nums = match &row[2] {
+    Some(x) => x.split(',').map(|x| x.parse::<u8>().unwrap()).collect(),
+    None => prev!().nums.clone(),
+  };
+
+  let name = match &row[3] {
+    Some(x) => x.clone(),
+    None => prev!().lesson.name.clone(),
+  };
+
+  let teacher = match &row[4] {
+    Some(x) => Some(x.clone()),
+    None => prev!().lesson.teacher.clone(),
+  };
+
+  let classroom = row[5].clone();
+
+  // println!("{} {:?} {:?} {} {:?} {:?}", group, sub, nums, name, teacher, classroom);
+  let lesson = Lesson { num: 0, subgroup, name, teacher, classroom };
+  let parsed = ParsedLesson { group, nums, lesson };
+  Ok(Some(parsed))
 }
 
 fn parse_row<'a>(row: &Row) -> Vec<Option<String>> {
@@ -101,7 +139,8 @@ fn parse_row<'a>(row: &Row) -> Vec<Option<String>> {
 
   r[5] = raw.next().and_then(|x| Some(x.trim().to_owned())); // classroom
 
-  dbg!(&r);
+  // dbg!(&r);
+  // println!("{:?}", r);
   r
 }
 

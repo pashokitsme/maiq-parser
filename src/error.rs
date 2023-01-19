@@ -8,6 +8,9 @@ pub enum ParserError {
   #[error("{0}")]
   CantParse(String),
 
+  #[error("An unknown error occured")]
+  Error,
+
   #[error("{0}")]
   NetworkError(reqwest::Error),
 }
