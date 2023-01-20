@@ -162,6 +162,11 @@ fn map_lessons_to_groups(vec: &Vec<ParsedLesson>, is_even: bool, date_offset: i6
         res.last_mut().unwrap()
       };
 
+      if parsed.lesson.name.as_str() == "День самостоятельной работы" {
+        group.lessons.push(parsed.lesson.clone());
+        continue;
+      }
+
       let mut lesson = if parsed.lesson.name.as_str() == "По расписанию" {
         replacer::replace(*num, &parsed.group, is_even, date_offset)
       } else {
