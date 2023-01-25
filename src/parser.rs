@@ -103,27 +103,26 @@ fn parse_row(row: &Row) -> Vec<Option<String>> {
   }
 
   let mut r = vec![None; 6];
-
   let mut raw = row.iter().map(|x| as_text(x)).filter(|x| x != " ").peekable();
 
   if raw.peek() == None {
     return r;
   }
 
-  if GROUP_REGEX.is_match(raw.peek().unwrap()) {
+  if GROUP_REGEX.is_match(raw.peek().unwrap_or(&"".into())) {
     let binding = raw.next().unwrap();
     let mut iter = binding.split(&[' ', ' ', '\n']);
     r[0] = iter.next().and_then(|x| Some(x.trim().to_owned())); // group
     r[1] = iter.next().and_then(|x| Some(x.trim().to_owned())); // subgroup
   }
 
-  match NUM_REGEX.is_match(raw.peek().unwrap()) {
+  match NUM_REGEX.is_match(raw.peek().unwrap_or(&"".into())) {
     true => r[2] = Some(raw.next().unwrap().trim().to_owned()), // num
     false => (),
   }
 
   {
-    let iter = raw.next().unwrap();
+    let iter = raw.next().unwrap_or("None".into());
     let name_n_teacher = iter.split(',');
 
     match name_n_teacher.clone().count() {
