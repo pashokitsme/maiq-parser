@@ -79,7 +79,7 @@ fn parse_lesson(row: Vec<Option<String>>, prev: &Option<ParsedLesson>) -> Result
   };
 
   let nums = match &row[2] {
-    Some(x) => x.split(',').map(|x| x.parse::<u8>().unwrap()).collect(),
+    Some(x) => x.split(',').map(|x| x.parse::<u8>().unwrap_or(0)).collect(),
     None => prev!().nums.clone(),
   };
 
@@ -102,6 +102,15 @@ fn parse_row(row: &Row) -> Vec<Option<String>> {
     static ref NUM_REGEX: Regex = Regex::new(r#"^(\d{1},{0,1})*$"#).unwrap();
   }
 
+  macro_rules! regex_match_opt {
+    ($regex: expr, $pattern: expr) => {
+      match $pattern {
+        Some(pattern) => $regex.is_match(pattern),
+        None => false,
+      }
+    };
+  }
+
   let mut r = vec![None; 6];
   let mut raw = row.iter().map(|x| as_text(x)).filter(|x| x != " ").peekable();
 
@@ -109,21 +118,19 @@ fn parse_row(row: &Row) -> Vec<Option<String>> {
     return r;
   }
 
-  if GROUP_REGEX.is_match(raw.peek().unwrap_or(&"".into())) {
+  if regex_match_opt!(GROUP_REGEX, raw.peek()) {
     let binding = raw.next().unwrap();
     let mut iter = binding.split(&[' ', ' ', '\n']);
     r[0] = iter.next().and_then(|x| Some(x.trim().to_owned())); // group
     r[1] = iter.next().and_then(|x| Some(x.trim().to_owned())); // subgroup
   }
 
-  match NUM_REGEX.is_match(raw.peek().unwrap_or(&"".into())) {
-    true => r[2] = Some(raw.next().unwrap().trim().to_owned()), // num
-    false => (),
+  if regex_match_opt!(NUM_REGEX, raw.peek()) {
+    r[2] = Some(raw.next().unwrap().trim().to_owned()) // num
   }
 
-  {
-    let iter = raw.next().unwrap_or("None".into());
-    let name_n_teacher = iter.split(',');
+  if let Some(name_n_teacher) = raw.next() {
+    let name_n_teacher = name_n_teacher.split(',');
 
     match name_n_teacher.clone().count() {
       1 => r[3] = Some(name_n_teacher.map(|x| x.trim()).collect::<Vec<&str>>().join(", ")),
