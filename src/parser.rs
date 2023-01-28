@@ -24,13 +24,10 @@ lazy_static! {
 
 // todo: rewrite table_extract with tl crate
 pub fn parse(fetched: &Fetched) -> Result<Snapshot, ParserError> {
-  let table = match table_extract::Table::find_first(&fetched.html) {
-    Some(x) => x,
-    None => return Err(ParserError::NotYet),
-  };
+  let table = table_extract::Table::find_first(&fetched.html).ok_or(ParserError::NoTable)?;
   let mut table = table.iter();
   let mut lessons = vec![];
-  let mut prev: Option<ParsedLesson> = None;
+  let mut prev = None;
   let date = parse_date(&table.next().unwrap());
   for row in table.skip(2) {
     let row = parse_row(&row);
@@ -154,50 +151,44 @@ fn parse_row(row: &Row) -> Vec<Option<String>> {
 }
 
 fn map_lessons_to_groups(vec: &Vec<ParsedLesson>, is_even: bool, date_offset: i64) -> Vec<Group> {
-  let mut res: Vec<Group> = vec![];
+  let mut groups: Vec<Group> = vec![];
   for parsed in vec {
-    for num in &parsed.nums {
-      if *num < 1 || parsed.lesson.name.as_str() == "Нет" {
-        continue;
-      }
+    for num in parsed
+      .nums
+      .iter()
+      .filter(|&num| *num > 0 && parsed.lesson.name != "Нет")
+      .map(|num| *num)
+    {
       let name = parsed.group.as_str().clone();
-      let group = if let Some(x) = res.iter().position(|x| x.name.as_str() == name) {
-        &mut res[x]
-      } else {
-        res.push(Group::new(name.into()));
-        res.last_mut().unwrap()
+      let group = match groups.iter().position(|x| x.name.as_str() == name) {
+        Some(x) => &mut groups[x],
+        None => {
+          groups.push(Group::new(name.into()));
+          groups.last_mut().unwrap()
+        }
       };
 
-      if parsed.lesson.name.as_str() == "День самостоятельной работы" {
-        group.lessons.push(parsed.lesson.clone());
-        continue;
-      }
-
-      let mut lesson = if parsed.lesson.name.as_str() == "По расписанию" {
-        replacer::replace(*num, &parsed.group, is_even, date_offset)
-      } else {
-        None
+      let mut lesson = match &*parsed.lesson.name {
+        "День самостоятельной работы" => {
+          group.lessons.push(parsed.lesson.clone());
+          continue;
+        }
+        _ => replacer::replace_or_clone(num, &parsed.group, &parsed.lesson, is_even, date_offset),
       };
 
       if parsed.lesson.classroom.is_some() {
-        if let Some(l) = lesson.as_mut() {
-          l.classroom = parsed.lesson.classroom.clone()
-        }
+        lesson.classroom = parsed.lesson.classroom.clone()
       }
 
-      group.lessons.push(lesson.unwrap_or_else(|| {
-        let mut lesson = parsed.lesson.clone();
-        lesson.num = *num;
-        lesson
-      }))
+      group.lessons.push(lesson);
     }
   }
 
-  res.iter_mut().for_each(|g| {
+  groups.iter_mut().for_each(|g| {
     g.lessons.sort_by_key(|k| k.num);
     g.uid = g.uid()
   });
-  res
+  groups
 }
 
 fn as_text(html: &str) -> String {

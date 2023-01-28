@@ -4,12 +4,20 @@ use chrono::Datelike;
 use maiq_shared::{default::DefaultDay, utils, Lesson};
 
 lazy_static! {
-  static ref FILE_NAMES: [&'static str; 6] = ["mon", "tue", "wed", "thu", "fri", "sat"];
   pub static ref REPLECEMENTS: Vec<DefaultDay> = load_defaults();
 }
 
-pub fn replace(num: u8, group_name: &str, is_even: bool, date_offset: i64) -> Option<Lesson> {
-  let now = utils::now_date(date_offset).date_naive().weekday();
+pub fn replace_or_clone(num: u8, group_name: &str, lesson: &Lesson, is_even: bool, offset_days: i64) -> Lesson {
+  let mut lesson = match lesson.name.as_str() {
+    "По расписанию" => replaced(num, group_name, is_even, offset_days).unwrap_or_else(|| lesson.clone()),
+    _ => lesson.clone(),
+  };
+  lesson.num = num;
+  lesson
+}
+
+pub fn replaced(num: u8, group_name: &str, is_even: bool, offset_days: i64) -> Option<Lesson> {
+  let now = utils::now_date(offset_days).date_naive().weekday();
   REPLECEMENTS
     .iter()
     .find(|d| d.day == now)
@@ -28,7 +36,7 @@ pub fn replace(num: u8, group_name: &str, is_even: bool, date_offset: i64) -> Op
 }
 
 fn load_defaults() -> Vec<DefaultDay> {
-  FILE_NAMES
+  ["mon", "tue", "wed", "thu", "fri", "sat"]
     .iter()
     .map(|f| read(&format!("default/{}.json", f)).expect(&format!("Can't load default for {}", f)))
     .collect::<Vec<DefaultDay>>()

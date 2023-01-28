@@ -2,16 +2,13 @@ use std::num::ParseIntError;
 
 #[derive(thiserror::Error, Debug)]
 pub enum ParserError {
-  #[error("There is no timetable yet")]
-  NotYet,
+  #[error("HTML Table not found")]
+  NoTable,
 
-  #[error("{0}")]
-  CantParse(String),
+  #[error("An unknown error occured: {0}")]
+  Unknown(String),
 
-  #[error("An unknown error occured")]
-  Error,
-
-  #[error("{0}")]
+  #[error("An reqwest error occured: {0}")]
   NetworkError(reqwest::Error),
 }
 
@@ -23,6 +20,6 @@ impl From<reqwest::Error> for ParserError {
 
 impl From<ParseIntError> for ParserError {
   fn from(err: ParseIntError) -> Self {
-    ParserError::CantParse(err.to_string())
+    ParserError::Unknown(err.to_string())
   }
 }

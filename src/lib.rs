@@ -6,7 +6,7 @@ use maiq_shared::FetchUrl;
 
 use error::ParserError;
 
-pub use fetch::{fetch, Fetched};
+pub use fetch::fetch;
 pub use maiq_shared::*;
 pub use parser::parse;
 
