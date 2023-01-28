@@ -22,7 +22,6 @@ lazy_static! {
   static ref CORASICK_REPLACE_PATTERNS: [&'static str; 3] = [" ", " ", ""];
 }
 
-// todo: rewrite table_extract with tl crate
 pub fn parse(fetched: &Fetched) -> Result<Snapshot, ParserError> {
   let table = table_extract::Table::find_first(&fetched.html).ok_or(ParserError::NoTable)?;
   let mut table = table.iter();
