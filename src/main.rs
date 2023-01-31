@@ -1,8 +1,14 @@
+/*
+!          =================
+!
+! It's just a junk file for test something
+! Too lazy to write tests
+!
+!          =================
+ */
+
 use maiq_parser::{fetch_snapshot, warmup_defaults, Fetch};
 use maiq_shared::Snapshot;
-
-// ? It's just a junk file for test something
-// ? Too lazy to write tests
 
 #[allow(dead_code, unused_variables)]
 #[tokio::main]
@@ -10,7 +16,7 @@ async fn main() {
   dotenvy::dotenv().ok();
   warmup_defaults();
 
-  let snapshot = fetch_snapshot(Fetch::Today).await.unwrap();
+  let snapshot = fetch_snapshot(Fetch::Next).await.unwrap();
   // println!("{:#?}", snapshot.group("Ир3-21").unwrap())
   print_snapshot(&snapshot);
   // println!("{}", snapshot.uid);
