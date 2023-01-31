@@ -6,7 +6,7 @@ use regex::Regex;
 use scraper::Html;
 use table_extract::Row;
 
-use crate::{fetch::Fetched, replacer, ParserError};
+use crate::{replacer, ParserError};
 
 #[derive(Debug, Clone)]
 struct ParsedLesson {
@@ -22,8 +22,8 @@ lazy_static! {
   static ref CORASICK_REPLACE_PATTERNS: [&'static str; 3] = [" ", " ", ""];
 }
 
-pub fn parse(fetched: &Fetched) -> Result<Snapshot, ParserError> {
-  let table = table_extract::Table::find_first(&fetched.html).ok_or(ParserError::NoTable)?;
+pub fn parse(html: &String) -> Result<Snapshot, ParserError> {
+  let table = table_extract::Table::find_first(&html).ok_or(ParserError::NoTable)?;
   let mut table = table.iter();
   let mut lessons = vec![];
   let mut prev = None;
