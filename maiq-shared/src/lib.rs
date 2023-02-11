@@ -127,7 +127,7 @@ pub struct TinySnapshot {
   pub group: Option<Group>,
 }
 
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Clone, Copy, Serialize, Deserialize)]
 pub enum Fetch {
   Today,
   Next,
