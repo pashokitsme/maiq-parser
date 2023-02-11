@@ -1,26 +1,27 @@
 use std::fs;
 
-use chrono::Datelike;
-use maiq_shared::{default::DefaultDay, utils, Lesson};
+use chrono::{DateTime, Datelike, Utc};
+use maiq_shared::{default::DefaultDay, utils::time, Lesson};
 
 lazy_static! {
   pub static ref REPLECEMENTS: Vec<DefaultDay> = load_defaults();
 }
 
-pub fn replace_or_clone(num: u8, group_name: &str, lesson: &Lesson, is_even: bool, offset_days: i64) -> Lesson {
+pub fn replace_or_clone(num: u8, group_name: &str, lesson: &Lesson, date: DateTime<Utc>) -> Lesson {
   let mut lesson = match lesson.name.as_str() {
-    "По расписанию" => replaced(num, group_name, is_even, offset_days).unwrap_or_else(|| lesson.clone()),
+    "По расписанию" => replaced(num, group_name, date).unwrap_or_else(|| lesson.clone()),
     _ => lesson.clone(),
   };
   lesson.num = num;
   lesson
 }
 
-pub fn replaced(num: u8, group_name: &str, is_even: bool, offset_days: i64) -> Option<Lesson> {
-  let now = utils::now_date(offset_days).date_naive().weekday();
+pub fn replaced(num: u8, group_name: &str, date: DateTime<Utc>) -> Option<Lesson> {
+  let weekday = date.date_naive().weekday();
+  let is_even = time::is_week_even(&date);
   REPLECEMENTS
     .iter()
-    .find(|d| d.day == now)
+    .find(|d| d.day == weekday)
     .and_then(|d| {
       d.groups.iter().find(|g| g.name.as_str() == group_name).and_then(|g| {
         g.lessons.iter().find(|l| match l.is_even {

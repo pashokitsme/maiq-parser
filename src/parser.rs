@@ -1,6 +1,6 @@
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder};
 
-use chrono::{DateTime, Datelike, Utc};
+use chrono::{DateTime, Utc};
 use maiq_shared::*;
 use regex::Regex;
 use scraper::Html;
@@ -22,13 +22,11 @@ lazy_static! {
   static ref CORASICK_REPLACE_PATTERNS: [&'static str; 3] = [" ", " ", ""];
 }
 
-pub fn parse(html: &String) -> Result<Snapshot, ParserError> {
+pub fn parse(html: &String, date: DateTime<Utc>) -> Result<Snapshot, ParserError> {
   let table = table_extract::Table::find_first(&html).ok_or(ParserError::NoTable)?;
-  let mut table = table.iter();
   let mut lessons = vec![];
   let mut prev = None;
-  let date = parse_date(&table.next().unwrap());
-  for row in table.skip(2) {
+  for row in table.iter().skip(3) {
     let row = parse_row(&row);
     let lesson = parse_lesson(row, &prev)?;
     if lesson.is_some() {
@@ -37,17 +35,9 @@ pub fn parse(html: &String) -> Result<Snapshot, ParserError> {
     }
   }
 
-  let groups = map_lessons_to_groups(&lessons, date.0.iso_week().week() % 2 != 0, date.1);
+  let groups = map_lessons_to_groups(&lessons, date);
 
-  Ok(Snapshot::new(groups, date.0))
-}
-
-fn parse_date(row: &Row) -> (DateTime<Utc>, i64) {
-  let full_str_binding = as_text(row.iter().next().unwrap());
-  let iter = full_str_binding.trim().split(' ').rev();
-  let weekday = iter.skip(2).next().unwrap();
-  let date = utils::map_day(&utils::now_date(0), weekday);
-  (date.0, date.1)
+  Ok(Snapshot::new(groups, date))
 }
 
 fn parse_lesson(row: Vec<Option<String>>, prev: &Option<ParsedLesson>) -> Result<Option<ParsedLesson>, ParserError> {
@@ -149,7 +139,7 @@ fn parse_row(row: &Row) -> Vec<Option<String>> {
   r
 }
 
-fn map_lessons_to_groups(vec: &Vec<ParsedLesson>, is_even: bool, date_offset: i64) -> Vec<Group> {
+fn map_lessons_to_groups(vec: &Vec<ParsedLesson>, date: DateTime<Utc>) -> Vec<Group> {
   let mut groups: Vec<Group> = vec![];
   for parsed in vec {
     for num in parsed
@@ -172,7 +162,7 @@ fn map_lessons_to_groups(vec: &Vec<ParsedLesson>, is_even: bool, date_offset: i6
           group.lessons.push(parsed.lesson.clone());
           continue;
         }
-        _ => replacer::replace_or_clone(num, &parsed.group, &parsed.lesson, is_even, date_offset),
+        _ => replacer::replace_or_clone(num, &parsed.group, &parsed.lesson, date),
       };
 
       if parsed.lesson.classroom.is_some() {

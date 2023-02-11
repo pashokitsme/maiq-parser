@@ -37,8 +37,8 @@ impl From<ParseIntError> for ParserError {
 }
 
 pub async fn fetch_snapshot<T: FetchUrl>(mode: T) -> Result<Snapshot, ParserError> {
-  let raw = fetch(mode).await?;
-  parse(&raw)
+  let raw = fetch(&mode).await?;
+  parse(&raw, mode.date())
 }
 
 pub fn warmup_defaults() {
@@ -50,7 +50,7 @@ pub fn warmup_defaults() {
   info!("Loaded replacements for: {:?}", group_names);
 }
 
-async fn fetch<T: FetchUrl>(fetch_mode: T) -> Result<String, reqwest::Error> {
+async fn fetch<T: FetchUrl>(fetch_mode: &T) -> Result<String, reqwest::Error> {
   let res = reqwest::get(fetch_mode.url()).await?;
   let html = res.text_with_charset("windows-1251").await?;
   Ok(html)

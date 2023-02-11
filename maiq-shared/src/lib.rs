@@ -4,9 +4,7 @@ pub mod utils;
 use chrono::{DateTime, Datelike, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use sha2::{digest::Digest, Sha256};
-use utils::bytes_as_str;
-
-use crate::utils::now;
+use utils::{bytes_as_str, time};
 
 pub trait Uid {
   fn uid(&self) -> String {
@@ -93,7 +91,7 @@ impl Snapshot {
   }
 
   pub fn age(&self) -> Duration {
-    now(0) - self.parsed_date
+    time::now() - self.parsed_date
   }
 
   pub fn is_even(&self) -> bool {
@@ -137,6 +135,7 @@ pub enum Fetch {
 
 pub trait FetchUrl {
   fn url(&self) -> &'static str;
+  fn date(&self) -> DateTime<Utc>;
 }
 
 impl FetchUrl for Fetch {
@@ -144,6 +143,17 @@ impl FetchUrl for Fetch {
     match self {
       Fetch::Today => "https://rsp.chemk.org/4korp/today.htm",
       Fetch::Next => "https://rsp.chemk.org/4korp/tomorrow.htm",
+    }
+  }
+
+  fn date(&self) -> DateTime<Utc> {
+    let now = time::now_date();
+    match self {
+      Fetch::Today => now,
+      Fetch::Next => match now.weekday() {
+        chrono::Weekday::Sat => time::now_date_offset(2),
+        _ => time::now_date_offset(1),
+      },
     }
   }
 }

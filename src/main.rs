@@ -16,7 +16,7 @@ async fn main() {
   dotenvy::dotenv().ok();
   warmup_defaults();
 
-  let snapshot = fetch_snapshot(Fetch::Next).await.unwrap();
+  let snapshot = fetch_snapshot(Fetch::Today).await.unwrap();
   // println!("{:#?}", snapshot.group("Ир3-21").unwrap())
   print_snapshot(&snapshot);
   // println!("{}", snapshot.uid);

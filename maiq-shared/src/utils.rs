@@ -1,5 +1,3 @@
-use chrono::{DateTime, Datelike, Days, Duration, Timelike, Utc, Weekday};
-
 static ALPHABET: &[u8] = "0123456789abcdefghijklmnopqrstuvwxyz".as_bytes();
 
 #[macro_export]
@@ -28,44 +26,34 @@ pub(crate) fn bytes_as_str(bytes: &[u8]) -> String {
   res
 }
 
-pub fn map_weekday<'d>(day: &'d str) -> Weekday {
-  match day {
-    "Понедельник" => Weekday::Mon,
-    "Вторник" => Weekday::Tue,
-    "Среда" => Weekday::Wed,
-    "Четверг" => Weekday::Thu,
-    "Пятница" => Weekday::Fri,
-    "Суббота" => Weekday::Sat,
-    "Воскресенье" => Weekday::Sun,
-    _ => unimplemented!(),
+pub mod time {
+  use chrono::{DateTime, Datelike, Duration, Timelike, Utc};
+
+  pub fn now_with_offset(offset_days: i64) -> DateTime<Utc> {
+    now() + Duration::days(offset_days)
   }
-}
 
-pub fn map_day<'d>(date: &DateTime<Utc>, day: &'d str) -> (DateTime<Utc>, i64) {
-  let mut count: u64 = 0;
-  let day = map_weekday(day);
-  let mut days = date.date_naive().iter_days();
-  for _ in 0..10 {
-    if days.next().unwrap().weekday() == day {
-      break;
-    }
-    count += 1;
+  pub fn now() -> DateTime<Utc> {
+    Utc::now() + Duration::hours(3)
   }
-  (date.checked_add_days(Days::new(count)).unwrap(), count as i64)
-}
 
-pub fn now_date(offset_days: i64) -> DateTime<Utc> {
-  now(offset_days)
-    .with_hour(0)
-    .unwrap()
-    .with_minute(0)
-    .unwrap()
-    .with_second(0)
-    .unwrap()
-    .with_nanosecond(0)
-    .unwrap()
-}
+  pub fn now_date() -> DateTime<Utc> {
+    now()
+      .with_hour(0)
+      .unwrap()
+      .with_minute(0)
+      .unwrap()
+      .with_second(0)
+      .unwrap()
+      .with_nanosecond(0)
+      .unwrap()
+  }
 
-pub fn now(offset_days: i64) -> DateTime<Utc> {
-  Utc::now() + Duration::hours(3) + Duration::days(offset_days)
+  pub fn now_date_offset(offset_days: i64) -> DateTime<Utc> {
+    now_date() + Duration::days(offset_days)
+  }
+
+  pub fn is_week_even(date: &DateTime<Utc>) -> bool {
+    date.iso_week().week0() % 2 == 0
+  }
 }
