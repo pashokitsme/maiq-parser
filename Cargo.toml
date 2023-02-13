@@ -6,34 +6,30 @@ license = "MPL-2.0"
 version = "0.7.0"
 edition = "2021"
 
-[profile.release.build-override]
-strip = true
-codegen-units=1
-opt-level = "z"
-
 [profile.release]
 strip = true
 lto = true
-codegen-units=1
-panic="abort"
-opt-level = "z"
+opt-level = 3
 
 [lib]
 
+[features]
+__main = ["dep:tokio"]
+
 [dependencies]
-aho-corasick = "0.7.20"
+maiq-shared = { path = "maiq-shared/" }
+reqwest = { version = "0.11.13" }
+
+scraper = "0.14.0"
+table-extract = "0.2.2"
+
 chrono = { version = "0.4.23", features = ["serde"] }
 dotenvy = "0.15.6"
 lazy_static = "1.4.0"
 regex = "1.7.0"
 log = "0.4.17"
-reqwest = { version = "0.11.13" }
 serde = { version = "1.0.149", features = ["derive"] }
 thiserror = "1.0.38"
-tokio = { version = "1.23.0", features = ["macros", "rt-multi-thread"] }
-maiq-shared = { path = "maiq-shared/" }
 serde_json = "1.0.91"
 
-# todo: replace with tl
-scraper = "0.14.0"
-table-extract = "0.2.2"
+tokio = { version = "1.23.0", features = ["macros", "rt-multi-thread"], optional = true }

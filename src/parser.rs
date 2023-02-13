@@ -1,4 +1,3 @@
-use aho_corasick::{AhoCorasick, AhoCorasickBuilder};
 use scraper::Html;
 use table_extract::Row;
 
@@ -14,16 +13,8 @@ struct ParsedLesson {
   pub lesson: Lesson,
 }
 
-lazy_static! {
-  static ref CORASICK: AhoCorasick = AhoCorasickBuilder::new()
-    .ascii_case_insensitive(true)
-    .build(&["  ", " ", "\n"]);
-  static ref CORASICK_REPLACE_PATTERNS: [&'static str; 3] = [" ", " ", ""];
-}
-
 pub fn parse(html: &String, date: DateTime<Utc>) -> Result<Snapshot, ParserError> {
   let table = table_extract::Table::find_first(&html).ok_or(ParserError::NoTable)?;
-  // let table = html::parse_first_table(&html);
   let mut lessons = vec![];
   let mut prev = None;
   for row in table.iter().skip(4) {

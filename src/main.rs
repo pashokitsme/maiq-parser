@@ -1,3 +1,8 @@
+#[cfg(not(feature = "__main"))]
+fn main() {
+}
+
+#[cfg(feature = "__main")]
 /*
 !          =================
 !
@@ -6,10 +11,11 @@
 !
 !          =================
  */
-
 use maiq_parser::{fetch_snapshot, warmup_defaults, Fetch};
+#[cfg(feature = "__main")]
 use maiq_shared::Snapshot;
 
+#[cfg(feature = "__main")]
 #[allow(dead_code, unused_variables)]
 #[tokio::main]
 async fn main() {
@@ -21,6 +27,7 @@ async fn main() {
   print_snapshot(&snapshot);
 }
 
+#[cfg(feature = "__main")]
 #[allow(dead_code)]
 fn print_snapshot(s: &Snapshot) {
   println!("{} от {}\n", s.uid, s.date);
