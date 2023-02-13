@@ -1,12 +1,11 @@
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder};
-
-use chrono::{DateTime, Utc};
-use maiq_shared::*;
-use regex::Regex;
 use scraper::Html;
 use table_extract::Row;
 
 use crate::{replacer, ParserError};
+use chrono::{DateTime, Utc};
+use maiq_shared::*;
+use regex::Regex;
 
 #[derive(Debug, Clone)]
 struct ParsedLesson {
@@ -24,9 +23,10 @@ lazy_static! {
 
 pub fn parse(html: &String, date: DateTime<Utc>) -> Result<Snapshot, ParserError> {
   let table = table_extract::Table::find_first(&html).ok_or(ParserError::NoTable)?;
+  // let table = html::parse_first_table(&html);
   let mut lessons = vec![];
   let mut prev = None;
-  for row in table.iter().skip(3) {
+  for row in table.iter().skip(4) {
     let row = parse_row(&row);
     let lesson = parse_lesson(row, &prev)?;
     if lesson.is_some() {
@@ -46,6 +46,18 @@ fn parse_lesson(row: Vec<Option<String>>, prev: &Option<ParsedLesson>) -> Result
       match prev {
         Some(x) => x,
         None => return Ok(None),
+      }
+    };
+  }
+
+  macro_rules! clone_if_not_empty {
+    ($e: expr) => {
+      match $e {
+        None => None,
+        Some(x) => match x.as_str() {
+          "" | " " => None,
+          _ => Some(x.clone()),
+        },
       }
     };
   }
@@ -74,8 +86,8 @@ fn parse_lesson(row: Vec<Option<String>>, prev: &Option<ParsedLesson>) -> Result
     None => prev!().lesson.name.clone(),
   };
 
-  let teacher = row[4].clone();
-  let classroom = row[5].clone();
+  let teacher = clone_if_not_empty!(&row[4]);
+  let classroom = clone_if_not_empty!(&row[5]);
 
   let lesson = Lesson { num: 0, subgroup, name, teacher, classroom };
   let parsed = ParsedLesson { group, nums, lesson };
@@ -98,7 +110,7 @@ fn parse_row(row: &Row) -> Vec<Option<String>> {
   }
 
   let mut r = vec![None; 6];
-  let mut raw = row.iter().map(|x| as_text(x)).filter(|x| x != " ").peekable();
+  let mut raw = row.iter().map(|x| into_text(x)).filter(|x| x != " ").peekable();
 
   if raw.peek() == None {
     return r;
@@ -106,7 +118,7 @@ fn parse_row(row: &Row) -> Vec<Option<String>> {
 
   if regex_match_opt!(GROUP_REGEX, raw.peek()) {
     let binding = raw.next().unwrap();
-    let mut iter = binding.split(&[' ', ' ', '\n']);
+    let mut iter = binding.split(&[' ', ' ', '\n']).peekable();
     r[0] = iter.next().and_then(|x| Some(x.trim().to_owned())); // group
     r[1] = iter.next().and_then(|x| Some(x.trim().to_owned())); // subgroup
   }
@@ -180,7 +192,29 @@ fn map_lessons_to_groups(vec: &Vec<ParsedLesson>, date: DateTime<Utc>) -> Vec<Gr
   groups
 }
 
-fn as_text(html: &str) -> String {
-  let frag = Html::parse_fragment(html);
-  CORASICK.replace_all(frag.root_element().text().collect::<String>().as_str(), CORASICK_REPLACE_PATTERNS.as_slice())
+fn into_text(html: &str) -> String {
+  let fragment = Html::parse_fragment(html);
+  let mut res = String::new();
+
+  for text in fragment.root_element().text() {
+    let mut chars = text.chars().into_iter().peekable();
+    while let Some(c) = chars.next() {
+      let next = chars.peek();
+      if next.is_some() && next.unwrap().is_whitespace() && c.is_whitespace() {
+        continue;
+      }
+      if next.is_none() && c.is_whitespace() {
+        continue;
+      }
+
+      match c {
+        '\n' => (),
+        ' ' | '\t' => res.push(' '),
+        c if c.is_whitespace() => res.push(' '),
+        c => res.push(c),
+      }
+    }
+  }
+
+  res
 }

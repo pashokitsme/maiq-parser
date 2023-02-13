@@ -17,37 +17,8 @@ async fn main() {
   warmup_defaults();
 
   let snapshot = fetch_snapshot(Fetch::Today).await.unwrap();
-  // println!("{:#?}", snapshot.group("Ир3-21").unwrap())
+  // println!("{:#?}", snapshot.group("Са1-21").unwrap());
   print_snapshot(&snapshot);
-  // println!("{}", snapshot.uid);
-  // for group in snapshot.groups {
-  //   println!("{}: {}", group.name, group.uid)
-  // }
-
-  // let html = fs::read_to_string("dummy/1.html").unwrap();
-  // let fetched = Fetched { html, took: Duration::from_secs(1), etag: "123".into(), fetch_mode: maiq_parser::Fetch::Tomorrow };
-  // let parsed = parser::parse(&fetched).await.unwrap();
-  // let fetched = fetch_snapshot(&Fetch::Tomorrow).await.unwrap().snapshot;
-  // println!("{}", parsed.uid)
-  // print_snapshot(&fetched)
-  // println!("{:#?}", *replacer::REPLECEMENTS)
-  // let date = Utc::now()
-  //   .date_naive()
-  //   .checked_add_days(Days::new(1))
-  //   .unwrap()
-  //   .and_hms_opt(0, 0, 0)
-  //   .unwrap();
-  // let utc = DateTime::<Utc>::from_utc(date, Utc);
-  // let date: DateTime<Utc> = DateTime::from_utc(date, Utc);
-  // assert_eq!(date.timestamp(), utc.timestamp())
-  // let fetched = fetch(Fetch::Today).await.unwrap();
-  // let s = match parse(&fetched).await {
-  //   Ok(x) => x,
-  //   Err(x) => return println!("Ошибка: {}", x),
-  // };
-
-  // println!("parsed: {}, date: {}", s.parsed_date, s.date)
-  // print_snapshot(&s)
 }
 
 #[allow(dead_code)]

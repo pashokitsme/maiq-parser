@@ -9,14 +9,14 @@ lazy_static! {
 
 pub fn replace_or_clone(num: u8, group_name: &str, lesson: &Lesson, date: DateTime<Utc>) -> Lesson {
   let mut lesson = match lesson.name.as_str() {
-    "По расписанию" => replaced(num, group_name, date).unwrap_or_else(|| lesson.clone()),
+    "По расписанию" => replace(num, group_name, date).unwrap_or_else(|| lesson.clone()),
     _ => lesson.clone(),
   };
   lesson.num = num;
   lesson
 }
 
-pub fn replaced(num: u8, group_name: &str, date: DateTime<Utc>) -> Option<Lesson> {
+pub fn replace(num: u8, group_name: &str, date: DateTime<Utc>) -> Option<Lesson> {
   let weekday = date.date_naive().weekday();
   let is_even = time::is_week_even(&date);
   REPLECEMENTS
