@@ -3,7 +3,7 @@ name = "maiq-parser"
 authors = ["pashokitsme <pashamail79@gmail.com>"]
 repository = "https://github.com/pashokitsme/maiq-parser"
 license = "MPL-2.0"
-version = "0.7.0"
+version = "0.7.1"
 edition = "2021"
 
 [profile.release]
@@ -19,7 +19,6 @@ __main = ["dep:tokio"]
 [dependencies]
 maiq-shared = { path = "maiq-shared/" }
 reqwest = { version = "0.11.13" }
-
 scraper = "0.14.0"
 table-extract = "0.2.2"
 
