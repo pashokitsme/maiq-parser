@@ -200,7 +200,6 @@ fn into_text(html: &str) -> String {
 
       match c {
         '\n' => (),
-        ' ' | '\t' => res.push(' '),
         c if c.is_whitespace() => res.push(' '),
         c => res.push(c),
       }

@@ -1,5 +1,6 @@
 #[cfg(not(feature = "__main"))]
 fn main() {
+  println!("Nothing here")
 }
 
 #[cfg(feature = "__main")]
