@@ -17,7 +17,7 @@ pub fn parse(html: &String, date: DateTime<Utc>) -> Result<Snapshot, ParserError
   let table = table_extract::Table::find_first(&html).ok_or(ParserError::NoTable)?;
   let mut lessons = vec![];
   let mut prev = None;
-  for row in table.iter().skip(4) {
+  for row in table.iter() {
     let row = parse_row(&row);
     let lesson = parse_lesson(row, &prev)?;
     if lesson.is_some() {
@@ -41,7 +41,7 @@ fn parse_lesson(row: Vec<Option<String>>, prev: &Option<ParsedLesson>) -> Result
     };
   }
 
-  macro_rules! clone_if_not_empty {
+  macro_rules! not_empty {
     ($e: expr) => {
       match $e {
         None => None,
@@ -77,8 +77,8 @@ fn parse_lesson(row: Vec<Option<String>>, prev: &Option<ParsedLesson>) -> Result
     None => prev!().lesson.name.clone(),
   };
 
-  let teacher = clone_if_not_empty!(&row[4]);
-  let classroom = clone_if_not_empty!(&row[5]);
+  let teacher = not_empty!(&row[4]);
+  let classroom = not_empty!(&row[5]);
 
   let lesson = Lesson { num: 0, subgroup, name, teacher, classroom };
   let parsed = ParsedLesson { group, nums, lesson };
@@ -106,6 +106,8 @@ fn parse_row(row: &Row) -> Vec<Option<String>> {
   if raw.peek() == None {
     return r;
   }
+
+  // println!("{}", raw.clone().map(|x| format!("{};", x)).collect::<String>());
 
   if regex_match_opt!(GROUP_REGEX, raw.peek()) {
     let binding = raw.next().unwrap();
