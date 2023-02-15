@@ -9,7 +9,7 @@ edition = "2021"
 [profile.release]
 strip = true
 lto = true
-opt-level = 3
+opt-level = "z"
 
 [lib]
 

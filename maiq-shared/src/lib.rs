@@ -82,11 +82,11 @@ impl Snapshot {
     s
   }
 
-  pub fn group<'n, 'g>(&'g self, name: &'n str) -> Option<&'g Group> {
+  pub fn group(&self, name: &str) -> Option<&Group> {
     self.groups.iter().find(|g| g.name.as_str() == name)
   }
 
-  pub fn group_cloned<'n>(&self, name: &'n str) -> Option<Group> {
+  pub fn group_cloned(&self, name: &str) -> Option<Group> {
     self.group(name).cloned()
   }
 
@@ -98,7 +98,7 @@ impl Snapshot {
     self.date.iso_week().week() % 2 != 0
   }
 
-  pub fn tiny<'a>(&self, group: &'a str) -> TinySnapshot {
+  pub fn tiny(&self, group: &str) -> TinySnapshot {
     let group = self
       .groups
       .iter()
