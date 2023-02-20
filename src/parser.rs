@@ -26,7 +26,7 @@ pub fn parse(html: &String, date: DateTime<Utc>) -> Result<Snapshot, ParserError
     }
   }
 
-  let groups = map_lessons_to_groups(&lessons, date);
+  let groups = map_lessons_to_groups(lessons, date);
 
   Ok(Snapshot::new(groups, date))
 }
@@ -47,38 +47,47 @@ fn parse_lesson(row: Vec<Option<String>>, prev: &Option<ParsedLesson>) -> Result
         None => None,
         Some(x) => match x.as_str() {
           "" | " " => None,
-          _ => Some(x.clone()),
+          _ => Some(x),
         },
       }
     };
   }
 
+  
   if row.iter().all(|x| x.is_none()) {
     return Ok(None);
   }
+  
+  let mut row = row.into_iter();
 
-  let (group, subgroup) = match (&row[0], &row[1]) {
-    (Some(g), None) => (g.clone(), None),
-    (Some(g), Some(s)) => (g.clone(), s.parse::<u8>().ok()),
-    (None, Some(s)) => (prev!().group.clone(), s.parse::<u8>().ok()),
+  macro_rules! next {
+      () => {
+          row.next().unwrap()
+      };
+  }
+
+  let (group, subgroup) = match (next!(), next!()) {
+    (Some(g), None) => (g, None),
+    (Some(g), Some(s)) => (g, s.parse::<u8>().ok()),
+    (None, Some(s_prev)) => (prev!().group.clone(), s_prev.parse::<u8>().ok()),
     (None, None) => match prev {
-      Some(x) => (x.group.clone(), x.lesson.subgroup.clone()),
+      Some(prev) => (prev.group.clone(), prev.lesson.subgroup),
       None => return Ok(None),
     },
   };
 
-  let nums = match &row[2] {
+  let nums = match next!() {
     Some(x) => x.split(',').map(|x| x.parse::<u8>().unwrap_or(0)).collect(),
     None => prev!().nums.clone(),
   };
 
-  let name = match &row[3] {
+  let name = match next!() {
     Some(x) => x.clone(),
     None => prev!().lesson.name.clone(),
   };
 
-  let teacher = not_empty!(&row[4]);
-  let classroom = not_empty!(&row[5]);
+  let teacher = not_empty!(next!());
+  let classroom = not_empty!(next!());
 
   let lesson = Lesson { num: 0, subgroup, name, teacher, classroom };
   let parsed = ParsedLesson { group, nums, lesson };
@@ -144,7 +153,7 @@ fn parse_row(row: &Row) -> Vec<Option<String>> {
   r
 }
 
-fn map_lessons_to_groups(vec: &Vec<ParsedLesson>, date: DateTime<Utc>) -> Vec<Group> {
+fn map_lessons_to_groups(vec: Vec<ParsedLesson>, date: DateTime<Utc>) -> Vec<Group> {
   let mut groups: Vec<Group> = vec![];
   for parsed in vec {
     for num in parsed
