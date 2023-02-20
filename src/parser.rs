@@ -18,7 +18,7 @@ pub fn parse(html: &String, date: DateTime<Utc>) -> Result<Snapshot, ParserError
   let mut lessons = vec![];
   let mut prev = None;
   for row in table.iter() {
-    let row = parse_row(&row);
+    let row = parse_row(row);
     let lesson = parse_lesson(row, &prev)?;
     if lesson.is_some() {
       prev = lesson.clone();
@@ -94,7 +94,7 @@ fn parse_lesson(row: Vec<Option<String>>, prev: &Option<ParsedLesson>) -> Result
   Ok(Some(parsed))
 }
 
-fn parse_row(row: &Row) -> Vec<Option<String>> {
+fn parse_row(row: Row) -> Vec<Option<String>> {
   lazy_static! {
     static ref GROUP_REGEX: Regex = Regex::new(r#"[А-я]{1,2}\d-\d{2}"#).unwrap();
     static ref NUM_REGEX: Regex = Regex::new(r#"^(\d{1},{0,1})*$"#).unwrap();
@@ -110,7 +110,7 @@ fn parse_row(row: &Row) -> Vec<Option<String>> {
   }
 
   let mut r = vec![None; 6];
-  let mut raw = row.iter().map(|x| into_text(x)).filter(|x| x != " ").peekable();
+  let mut raw = row.into_iter().map(|x| into_text(x)).filter(|x| !x.is_empty()).peekable();
 
   if raw.peek() == None {
     return r;
@@ -121,49 +121,47 @@ fn parse_row(row: &Row) -> Vec<Option<String>> {
   if regex_match_opt!(GROUP_REGEX, raw.peek()) {
     let binding = raw.next().unwrap();
     let mut iter = binding.split(&[' ', ' ', '\n']).peekable();
-    r[0] = iter.next().and_then(|x| Some(x.trim().to_owned())); // group
-    r[1] = iter.next().and_then(|x| Some(x.trim().to_owned())); // subgroup
+    r[0] = iter.next().and_then(|x| Some(x.trim().into())); // group
+    r[1] = iter.next().and_then(|x| Some(x.trim().into())); // subgroup
   }
 
   if regex_match_opt!(NUM_REGEX, raw.peek()) {
-    r[2] = Some(raw.next().unwrap().trim().to_owned()) // num
+    r[2] = Some(raw.next().unwrap()) // num
   }
 
   if let Some(name_n_teacher) = raw.next() {
-    let name_n_teacher = name_n_teacher.split(',');
+    let name_n_teacher = name_n_teacher.split(',').map(|x| x.trim());
 
     match name_n_teacher.clone().count() {
-      1 => r[3] = Some(name_n_teacher.map(|x| x.trim()).collect::<Vec<&str>>().join(", ")),
+      1 => r[3] = Some(name_n_teacher.collect::<Vec<&str>>().join(", ")),
       count if count > 0 => {
         r[3] = Some(
           name_n_teacher
             .clone()
             .take(count - 1)
-            .map(|x| x.trim())
             .collect::<Vec<&str>>()
             .join(", "),
         );
-        r[4] = name_n_teacher.clone().last().and_then(|x| Some(x.trim().to_owned()));
+        r[4] = name_n_teacher.last().and_then(|x| Some(x.into()));
       }
       _ => (),
     };
   }
 
-  r[5] = raw.next().and_then(|x| Some(x.trim().to_owned())); // classroom
+  r[5] = raw.next().and_then(|x| Some(x)); // classroom
   r
 }
 
 fn map_lessons_to_groups(vec: Vec<ParsedLesson>, date: DateTime<Utc>) -> Vec<Group> {
   let mut groups: Vec<Group> = vec![];
-  for parsed in vec {
+  for parsed in vec.into_iter() {
     for num in parsed
       .nums
       .iter()
       .filter(|&num| *num > 0 && parsed.lesson.name != "Нет")
-      .map(|num| *num)
     {
-      let name = parsed.group.as_str().clone();
-      let group = match groups.iter().position(|x| x.name.as_str() == name) {
+      let name = parsed.group.as_str();
+      let group = match groups.iter().position(|x| x.name == name) {
         Some(x) => &mut groups[x],
         None => {
           groups.push(Group::new(name.into()));
@@ -171,17 +169,13 @@ fn map_lessons_to_groups(vec: Vec<ParsedLesson>, date: DateTime<Utc>) -> Vec<Gro
         }
       };
 
-      let mut lesson = match &*parsed.lesson.name {
+      let lesson = match &*parsed.lesson.name {
         "День самостоятельной работы" => {
           group.lessons.push(parsed.lesson.clone());
           continue;
         }
-        _ => replacer::replace_or_clone(num, &parsed.group, &parsed.lesson, date),
+        _ => replacer::replace_or_clone(*num, &parsed.group, &parsed.lesson, date),
       };
-
-      if parsed.lesson.classroom.is_some() {
-        lesson.classroom = parsed.lesson.classroom.clone()
-      }
 
       group.lessons.push(lesson);
     }
@@ -217,5 +211,5 @@ fn into_text(html: &str) -> String {
     }
   }
 
-  res
+  res.trim().into()
 }

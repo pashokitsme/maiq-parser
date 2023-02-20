@@ -24,13 +24,13 @@ async fn main() {
   dotenvy::dotenv().ok();
   warmup_defaults();
 
-  let snapshot = fetch_snapshot(Fetch::Next).await.unwrap();
+  let snapshot = fetch_snapshot(Fetch::Today).await.unwrap();
   // println!("{:#?}", snapshot.group("Са1-21").unwrap());
   print_snapshot(&snapshot);
 }
 
 #[cfg(feature = "__main")]
-#[allow(dead_code)]
+#[allow(dead_code, unreachable_code)]
 fn print_snapshot(s: &Snapshot) {
   println!("{} от {}\n", s.uid, s.date);
   for group in &s.groups {
