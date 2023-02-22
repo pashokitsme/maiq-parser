@@ -53,17 +53,16 @@ fn parse_lesson(row: Vec<Option<String>>, prev: &Option<ParsedLesson>) -> Result
     };
   }
 
-  
   if row.iter().all(|x| x.is_none()) {
     return Ok(None);
   }
-  
-  let mut row = row.into_iter();
+
+  let mut row = row.into_iter().peekable();
 
   macro_rules! next {
-      () => {
-          row.next().unwrap()
-      };
+    () => {
+      row.next().unwrap()
+    };
   }
 
   let (group, subgroup) = match (next!(), next!()) {
@@ -82,11 +81,13 @@ fn parse_lesson(row: Vec<Option<String>>, prev: &Option<ParsedLesson>) -> Result
   };
 
   let name = match next!() {
-    Some(x) => x.clone(),
+    Some(x) => x,
     None => prev!().lesson.name.clone(),
   };
 
   let teacher = not_empty!(next!());
+  // println!("{} - {}: {:?}", group, name, row.peek());
+
   let classroom = not_empty!(next!());
 
   let lesson = Lesson { num: 0, subgroup, name, teacher, classroom };
@@ -110,13 +111,17 @@ fn parse_row(row: Row) -> Vec<Option<String>> {
   }
 
   let mut r = vec![None; 6];
-  let mut raw = row.into_iter().map(|x| into_text(x)).filter(|x| !x.is_empty()).peekable();
+  let mut raw = row
+    .into_iter()
+    .map(|x| into_text(x))
+    .filter(|x| !x.is_empty())
+    .peekable();
 
   if raw.peek() == None {
     return r;
   }
 
-  // println!("{}", raw.clone().map(|x| format!("{};", x)).collect::<String>());
+  println!("{}", raw.clone().map(|x| format!("{};", x)).collect::<String>());
 
   if regex_match_opt!(GROUP_REGEX, raw.peek()) {
     let binding = raw.next().unwrap();
@@ -130,7 +135,7 @@ fn parse_row(row: Row) -> Vec<Option<String>> {
   }
 
   if let Some(name_n_teacher) = raw.next() {
-    let name_n_teacher = name_n_teacher.split(',').map(|x| x.trim());
+    let name_n_teacher = name_n_teacher.split(',');
 
     match name_n_teacher.clone().count() {
       1 => r[3] = Some(name_n_teacher.collect::<Vec<&str>>().join(", ")),
@@ -139,10 +144,11 @@ fn parse_row(row: Row) -> Vec<Option<String>> {
           name_n_teacher
             .clone()
             .take(count - 1)
+            .map(|x| x.trim())
             .collect::<Vec<&str>>()
             .join(", "),
         );
-        r[4] = name_n_teacher.last().and_then(|x| Some(x.into()));
+        r[4] = name_n_teacher.last().and_then(|x| Some(x.trim().into()));
       }
       _ => (),
     };
@@ -158,7 +164,7 @@ fn map_lessons_to_groups(vec: Vec<ParsedLesson>, date: DateTime<Utc>) -> Vec<Gro
     for num in parsed
       .nums
       .iter()
-      .filter(|&num| *num > 0 && parsed.lesson.name != "Нет")
+      .filter(|&num| *num > 0 && parsed.lesson.name != "Нет" && parsed.lesson.name != "нет")
     {
       let name = parsed.group.as_str();
       let group = match groups.iter().position(|x| x.name == name) {
@@ -172,7 +178,7 @@ fn map_lessons_to_groups(vec: Vec<ParsedLesson>, date: DateTime<Utc>) -> Vec<Gro
       let lesson = match &*parsed.lesson.name {
         "День самостоятельной работы" => {
           group.lessons.push(parsed.lesson.clone());
-          continue;
+          break;
         }
         _ => replacer::replace_or_clone(*num, &parsed.group, &parsed.lesson, date),
       };
@@ -211,5 +217,5 @@ fn into_text(html: &str) -> String {
     }
   }
 
-  res.trim().into()
+  res
 }

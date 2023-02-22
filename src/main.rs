@@ -15,7 +15,7 @@ fn main() {
 use maiq_parser::{fetch_snapshot, warmup_defaults, Fetch};
 
 #[cfg(feature = "__main")]
-use maiq_shared::Snapshot;
+use maiq_shared::{Snapshot, Group};
 
 #[cfg(feature = "__main")]
 #[allow(dead_code, unused_variables)]
@@ -24,9 +24,10 @@ async fn main() {
   dotenvy::dotenv().ok();
   warmup_defaults();
 
-  let snapshot = fetch_snapshot(Fetch::Today).await.unwrap();
+  let snapshot = fetch_snapshot(Fetch::Next).await.unwrap();
   // println!("{:#?}", snapshot.group("Са1-21").unwrap());
-  print_snapshot(&snapshot);
+  // print_snapshot(&snapshot);
+  print_group(snapshot.group("Ир3-21").unwrap());
 }
 
 #[cfg(feature = "__main")]
@@ -34,22 +35,28 @@ async fn main() {
 fn print_snapshot(s: &Snapshot) {
   println!("{} от {}\n", s.uid, s.date);
   for group in &s.groups {
-    println!("Группа {} #{}", group.name, group.uid);
-    for lesson in &group.lessons {
-      print!("\t#{} ", lesson.num);
-      if let Some(sub) = lesson.subgroup {
-        print!("(п. {}) ", sub)
-      }
-      print!("{} ", lesson.name);
+    print_group(group);
+    println!()
+  }
+}
 
-      if let Some(classroom) = lesson.classroom.as_ref() {
-        print!("в {}", classroom);
-      }
+#[cfg(feature = "__main")]
+fn print_group(g: &Group) {
 
-      if let Some(teacher) = lesson.teacher.as_ref() {
-        print!(". Преподаватель: {}", teacher)
-      }
-      println!()
+  println!("Группа {} #{}", g.name, g.uid);
+  for lesson in &g.lessons {
+    print!("\t#{} ", lesson.num);
+    if let Some(sub) = lesson.subgroup {
+      print!("(п. {}) ", sub)
+    }
+    print!("{} ", lesson.name);
+
+    if let Some(classroom) = lesson.classroom.as_ref() {
+      print!("в {}", classroom);
+    }
+
+    if let Some(teacher) = lesson.teacher.as_ref() {
+      print!(". Преподаватель: {}", teacher)
     }
     println!()
   }

@@ -9,7 +9,7 @@ lazy_static! {
 
 pub fn replace_or_clone(num: u8, group_name: &str, lesson: &Lesson, date: DateTime<Utc>) -> Lesson {
   let mut lesson = match lesson.name.as_str() {
-    "По расписанию" => replace(num, group_name, date).unwrap_or_else(|| lesson.clone()),
+    "По расписанию" | "по расписанию" => replace(num, group_name, date).unwrap_or_else(|| lesson.clone()),
     _ => lesson.clone(),
   };
   lesson.num = num;
