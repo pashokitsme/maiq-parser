@@ -1,37 +1,69 @@
-#[cfg(not(feature = "__main"))]
-fn main() {
-  println!("Nothing here")
-}
+use std::{env, process::exit};
 
-/*
-!          =================
-!
-! It's just a junk file for test something
-! Too lazy to write tests
-!
-!          =================
-*/
-#[cfg(feature = "__main")]
 use maiq_parser::{fetch_snapshot, warmup_defaults, Fetch};
 
-#[cfg(feature = "__main")]
-use maiq_shared::{Snapshot, Group};
+use maiq_shared::{Group, Snapshot};
 
-#[cfg(feature = "__main")]
-#[allow(dead_code, unused_variables)]
 #[tokio::main]
 async fn main() {
   dotenvy::dotenv().ok();
-  warmup_defaults();
+  let mut args = env::args().into_iter().skip(1);
+  let mut fetch = None;
+  let mut target_group = None;
 
-  let snapshot = fetch_snapshot(Fetch::Next).await.unwrap();
-  // println!("{:#?}", snapshot.group("Са1-21").unwrap());
-  // print_snapshot(&snapshot);
-  print_group(snapshot.group("Ир3-21").unwrap());
+  while let Some(arg) = args.next() {
+    match &*arg {
+      "today" | "t" => set_if_none(&mut fetch, Fetch::Today),
+      "next" | "n" => set_if_none(&mut fetch, Fetch::Next),
+      "--group" | "-g" => match args.next() {
+        Some(group) => set_if_none(&mut target_group, group),
+        None => usage_exit(),
+      },
+      _ => (),
+    }
+  }
+
+  if fetch.is_none() {
+    usage_exit()
+  }
+
+  warmup_defaults();
+  let snapshot = fetch_snapshot(fetch.unwrap()).await.expect("Unable to get snapshot");
+
+  match target_group {
+    Some(g) => display_group(snapshot, &*g),
+    None => print_snapshot(&snapshot),
+  }
 }
 
-#[cfg(feature = "__main")]
-#[allow(dead_code, unreachable_code)]
+fn set_if_none<T>(param: &mut Option<T>, value: T) {
+  match param {
+    None => *param = Some(value),
+    _ => usage_exit(),
+  }
+}
+
+fn usage_exit() {
+  println!(
+    r#"usage: <fetch> <options>
+    fetch: 
+      today (t) | next (n) 
+      
+    options:
+      --group (-g) <name>"#
+  );
+  exit(1);
+}
+
+fn display_group(snapshot: Snapshot, group_name: &str) {
+  println!("{} от {}\n", snapshot.uid, snapshot.date);
+  let group = snapshot.group(group_name);
+  match group {
+    Some(g) => print_group(g),
+    None => println!("Нет группы {}", group_name),
+  }
+}
+
 fn print_snapshot(s: &Snapshot) {
   println!("{} от {}\n", s.uid, s.date);
   for group in &s.groups {
@@ -40,9 +72,7 @@ fn print_snapshot(s: &Snapshot) {
   }
 }
 
-#[cfg(feature = "__main")]
 fn print_group(g: &Group) {
-
   println!("Группа {} #{}", g.name, g.uid);
   for lesson in &g.lessons {
     print!("\t#{} ", lesson.num);

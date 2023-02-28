@@ -13,9 +13,6 @@ opt-level = 2
 
 [lib]
 
-[features]
-__main = ["dep:tokio"]
-
 [dependencies]
 maiq-shared = { path = "maiq-shared/" }
 reqwest = { version = "0.11.13" }
@@ -31,4 +28,4 @@ serde = { version = "1.0.149", features = ["derive"] }
 thiserror = "1.0.38"
 serde_json = "1.0.91"
 
-tokio = { version = "1.23.0", features = ["macros", "rt-multi-thread"], optional = true }
+tokio = { version = "1.23.0", features = ["macros", "rt-multi-thread"] }

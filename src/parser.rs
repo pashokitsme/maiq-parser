@@ -121,7 +121,7 @@ fn parse_row(row: Row) -> Vec<Option<String>> {
     return r;
   }
 
-  println!("{}", raw.clone().map(|x| format!("{};", x)).collect::<String>());
+  // println!("{}", raw.clone().map(|x| format!("{};", x)).collect::<String>());
 
   if regex_match_opt!(GROUP_REGEX, raw.peek()) {
     let binding = raw.next().unwrap();
