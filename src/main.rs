@@ -19,6 +19,7 @@ async fn main() {
         Some(group) => set_if_none(&mut target_group, group),
         None => usage_exit(),
       },
+      "--help" | "-h" => usage_exit(),
       _ => (),
     }
   }
@@ -50,7 +51,8 @@ fn usage_exit() {
       today (t) | next (n) 
       
     options:
-      --group (-g) <name>"#
+      --group (-g) <name> - print only group
+      --help (-h) - this message"#
   );
   exit(1);
 }
