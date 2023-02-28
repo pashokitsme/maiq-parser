@@ -1,6 +1,8 @@
 use std::fs;
 
 use chrono::{DateTime, Datelike, Utc};
+#[cfg(not(feature = "cli"))]
+use log::warn;
 use maiq_shared::{default::DefaultDay, utils::time, Lesson};
 
 lazy_static! {
@@ -39,7 +41,21 @@ pub fn replace(num: u8, group_name: &str, date: DateTime<Utc>) -> Option<Lesson>
 fn load_defaults() -> Vec<DefaultDay> {
   ["mon", "tue", "wed", "thu", "fri", "sat"]
     .iter()
-    .map(|f| read(&format!("default/{}.json", f)).expect(&format!("Can't load default for {}", f)))
+    .map(|f| {
+      let path = format!("default/{}.json", f);
+      (read(&path), path)
+    })
+    .filter(|(f, path)| match f {
+      Some(_) => true,
+      None => {
+        #[cfg(not(feature = "cli"))]
+        warn!("No default found in {}", path);
+        #[cfg(feature = "cli")]
+        eprintln!("warn -> no default found in {}", path);
+        false
+      }
+    })
+    .map(|f| f.0.unwrap())
     .collect::<Vec<DefaultDay>>()
 }
 

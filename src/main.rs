@@ -4,9 +4,11 @@ use maiq_parser::{fetch_snapshot, warmup_defaults, Fetch};
 
 use maiq_shared::{Group, Snapshot};
 
+#[cfg(feature = "cli")]
 #[tokio::main]
 async fn main() {
   dotenvy::dotenv().ok();
+
   let mut args = env::args().into_iter().skip(1);
   let mut fetch = None;
   let mut target_group = None;
@@ -54,7 +56,7 @@ fn usage_exit() {
       --group (-g) <name> - print only group
       --help (-h) - this message"#
   );
-  exit(1);
+  exit(0);
 }
 
 fn display_group(snapshot: Snapshot, group_name: &str) {
