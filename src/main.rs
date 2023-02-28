@@ -31,11 +31,13 @@ async fn main() {
   }
 
   warmup_defaults();
-  let snapshot = fetch_snapshot(fetch.unwrap()).await.expect("Unable to get snapshot");
 
-  match target_group {
-    Some(g) => display_group(snapshot, &*g),
-    None => print_snapshot(&snapshot),
+  match fetch_snapshot(fetch.unwrap()).await {
+    Ok(snapshot) => match target_group {
+      Some(g) => display_group(snapshot, &*g),
+      None => print_snapshot(&snapshot),
+    },
+    Err(err) => eprintln!("error -> {err}"),
   }
 }
 

@@ -7,9 +7,14 @@ version = "0.7.2"
 edition = "2021"
 
 [profile.release]
-strip = true
+strip = "symbols"
 lto = true
 opt-level = 2
+
+[profile.cli]
+inherits = "release"
+panic = "abort"
+
 
 [features]
 cli = ["dep:tokio"]
