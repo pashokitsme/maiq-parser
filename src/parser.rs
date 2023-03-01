@@ -195,17 +195,20 @@ fn map_lessons_to_groups(vec: Vec<ParsedLesson>, date: DateTime<Utc>) -> Vec<Gro
 }
 
 fn into_text(html: &str) -> String {
-  let fragment = Html::parse_fragment(html);
+  let doc = Html::parse_document(html);
+  let mut fragments = doc.root_element().text().peekable();
   let mut res = String::new();
 
-  for text in fragment.root_element().text() {
-    let mut chars = text.chars().into_iter().peekable();
+  while let Some(fragment) = fragments.next() {
+    let mut chars = fragment.chars().into_iter().peekable();
+    let mut whitespaces_only = true;
     while let Some(c) = chars.next() {
       let next = chars.peek();
-      if next.is_some() && next.unwrap().is_whitespace() && c.is_whitespace() {
-        continue;
+      if whitespaces_only && !c.is_whitespace() {
+        whitespaces_only = false;
       }
-      if next.is_none() && c.is_whitespace() {
+
+      if c.is_whitespace() && ((next.is_some() && next.unwrap().is_whitespace()) || next.is_none()) {
         continue;
       }
 
@@ -215,7 +218,12 @@ fn into_text(html: &str) -> String {
         c => res.push(c),
       }
     }
+
+    if whitespaces_only && fragments.peek().is_some() {
+      res.push(' ')
+    }
   }
 
-  res
+  // println!("{res}");
+  res //.trim().into()
 }

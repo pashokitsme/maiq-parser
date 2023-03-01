@@ -79,7 +79,7 @@ fn print_snapshot(s: &Snapshot) {
 }
 
 fn print_group(g: &Group) {
-  println!("Группа {} #{}", g.name, g.uid);
+  println!("Группа {} #{} ({})", g.name, g.uid, g.lessons.len());
   for lesson in &g.lessons {
     print!("\t#{} ", lesson.num);
     if let Some(sub) = lesson.subgroup {
