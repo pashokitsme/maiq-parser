@@ -121,13 +121,13 @@ fn parse_row(row: Row) -> Vec<Option<String>> {
     return r;
   }
 
-  // println!("{}", raw.clone().map(|x| format!("{};", x)).collect::<String>());
+  println!("{}", raw.clone().map(|x| format!("{};", x)).collect::<String>());
 
   if regex_match_opt!(GROUP_REGEX, raw.peek()) {
     let binding = raw.next().unwrap();
     let mut iter = binding.split(&[' ', ' ', '\n']).peekable();
     r[0] = iter.next().and_then(|x| Some(x.trim().into())); // group
-    r[1] = iter.next().and_then(|x| Some(x.trim().into())); // subgroup
+    r[1] = iter.next().and_then(|x| Some(x.replace("п/г", "").trim().into())); // subgroup
   }
 
   if regex_match_opt!(NUM_REGEX, raw.peek()) {
