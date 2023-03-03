@@ -127,7 +127,7 @@ fn parse_row(row: Row) -> Vec<Option<String>> {
     let binding = raw.next().unwrap();
     let mut iter = binding.split(&[' ', ' ', '\n']).peekable();
     r[0] = iter.next().and_then(|x| Some(x.trim().into())); // group
-    r[1] = iter.next().and_then(|x| Some(x.trim().into())); // subgroup
+    r[1] = iter.next().and_then(|x| Some(x.replace("п/г", "").trim().into())); // subgroup
   }
 
   if regex_match_opt!(NUM_REGEX, raw.peek()) {
@@ -224,6 +224,5 @@ fn into_text(html: &str) -> String {
     }
   }
 
-  // println!("{res}");
-  res //.trim().into()
+  res
 }
