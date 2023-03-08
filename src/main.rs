@@ -1,10 +1,11 @@
+#![cfg(feature = "cli")]
+
 use std::{env, process::exit};
 
 use maiq_parser::{fetch_snapshot, warmup_defaults, Fetch};
 
 use maiq_shared::{Group, Snapshot};
 
-#[cfg(feature = "cli")]
 #[tokio::main]
 async fn main() {
   dotenvy::dotenv().ok();
@@ -32,7 +33,7 @@ async fn main() {
 
   warmup_defaults();
 
-  match fetch_snapshot(fetch.unwrap()).await {
+  match fetch_snapshot(&fetch.unwrap()).await {
     Ok(snapshot) => match target_group {
       Some(g) => display_group(snapshot, &*g),
       None => print_snapshot(&snapshot),

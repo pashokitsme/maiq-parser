@@ -2,7 +2,7 @@ use scraper::Html;
 use table_extract::Row;
 
 use crate::{replacer, ParserError};
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, Utc};
 use maiq_shared::*;
 use regex::Regex;
 
@@ -13,11 +13,17 @@ struct ParsedLesson {
   pub lesson: Lesson,
 }
 
-pub fn parse(html: &String, date: DateTime<Utc>) -> Result<Snapshot, ParserError> {
+pub fn parse(html: &String, possible_date: DateTime<Utc>) -> Result<Snapshot, ParserError> {
   let table = table_extract::Table::find_first(&html).ok_or(ParserError::NoTable)?;
+  let mut table = table.into_iter();
   let mut lessons = vec![];
   let mut prev = None;
-  for row in table.iter() {
+
+  let date = parse_date(table.next().unwrap()).unwrap_or(possible_date);
+
+  println!("{:?}", date);
+
+  for row in table {
     let row = parse_row(row);
     let lesson = parse_lesson(row, &prev)?;
     if lesson.is_some() {
@@ -29,6 +35,48 @@ pub fn parse(html: &String, date: DateTime<Utc>) -> Result<Snapshot, ParserError
   let groups = map_lessons_to_groups(lessons, date);
 
   Ok(Snapshot::new(groups, date))
+}
+
+const MONTHS: [&'static str; 12] =
+  ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"];
+
+fn parse_date(row: Row) -> Option<DateTime<Utc>> {
+  let content = row.into_iter().map(|x| into_text(x)).collect::<String>();
+  let mut split = content.split(" ").into_iter();
+
+  while let Some(word) = split.next() {
+    let day = word.trim().parse::<u32>();
+    if day.is_err() {
+      continue;
+    }
+
+    let day = day.unwrap();
+
+    let month = match split.next() {
+      None => continue,
+      Some(month) => MONTHS.iter().position(|&m| m == month).map(|x| x as u32 + 1),
+    };
+
+    let month = match month {
+      Some(m) => m,
+      None => continue,
+    };
+
+    let year = match split.next() {
+      None => continue,
+      Some(year) => match &year.trim()[..4] {
+        y => match y.parse::<i32>() {
+          Ok(y) => y,
+          Err(_) => continue,
+        },
+      },
+    };
+
+    let date = NaiveDate::from_ymd_opt(year, month, day).unwrap();
+    return Some(DateTime::from_utc(NaiveDateTime::new(date, NaiveTime::default()), Utc));
+  }
+
+  None
 }
 
 fn parse_lesson(row: Vec<Option<String>>, prev: &Option<ParsedLesson>) -> Result<Option<ParsedLesson>, ParserError> {

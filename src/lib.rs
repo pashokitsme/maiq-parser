@@ -36,8 +36,8 @@ impl From<ParseIntError> for ParserError {
   }
 }
 
-pub async fn fetch_snapshot<T: FetchUrl>(mode: T) -> Result<Snapshot, ParserError> {
-  let raw = fetch(&mode).await?;
+pub async fn fetch_snapshot<T: FetchUrl>(mode: &T) -> Result<Snapshot, ParserError> {
+  let raw = fetch(mode).await?;
   parse(&raw, mode.date())
 }
 
