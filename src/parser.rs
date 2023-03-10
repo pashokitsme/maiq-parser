@@ -13,22 +13,27 @@ struct ParsedLesson {
   pub lesson: Lesson,
 }
 
-pub fn parse(html: &String, possible_date: DateTime<Utc>) -> Result<Snapshot, ParserError> {
-  let table = table_extract::Table::find_first(&html).ok_or(ParserError::NoTable)?;
+pub fn parse(html: &str, possible_date: DateTime<Utc>) -> Result<Snapshot, ParserError> {
+  let table = table_extract::Table::find_first(html).ok_or(ParserError::NoTable)?;
   let mut table = table.into_iter();
   let mut lessons = vec![];
   let mut prev = None;
 
-  let date = parse_date(table.next().unwrap()).unwrap_or(possible_date);
-
-  println!("{:?}", date);
+  let mut date = None;
+  for _ in 0..3 {
+    if let Some(d) = parse_date(table.next().unwrap()) {
+      date = Some(d);
+      break;
+    }
+  }
+  let date = date.unwrap_or(possible_date);
 
   for row in table {
     let row = parse_row(row);
     let lesson = parse_lesson(row, &prev)?;
-    if lesson.is_some() {
-      prev = lesson.clone();
-      lessons.push(lesson.unwrap());
+    if let Some(lesson) = lesson {
+      prev = Some(lesson.clone());
+      lessons.push(lesson);
     }
   }
 
@@ -37,12 +42,12 @@ pub fn parse(html: &String, possible_date: DateTime<Utc>) -> Result<Snapshot, Pa
   Ok(Snapshot::new(groups, date))
 }
 
-const MONTHS: [&'static str; 12] =
+const MONTHS: [&str; 12] =
   ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"];
 
 fn parse_date(row: Row) -> Option<DateTime<Utc>> {
   let content = row.into_iter().map(|x| into_text(x)).collect::<String>();
-  let mut split = content.split(" ").into_iter();
+  let mut split = content.split(' ');
 
   while let Some(word) = split.next() {
     let day = word.trim().parse::<u32>();
@@ -64,12 +69,13 @@ fn parse_date(row: Row) -> Option<DateTime<Utc>> {
 
     let year = match split.next() {
       None => continue,
-      Some(year) => match &year.trim()[..4] {
-        y => match y.parse::<i32>() {
+      Some(year) => {
+        let y = &year.trim()[..4];
+        match y.parse::<i32>() {
           Ok(y) => y,
           Err(_) => continue,
-        },
-      },
+        }
+      }
     };
 
     let date = NaiveDate::from_ymd_opt(year, month, day).unwrap();
@@ -165,7 +171,7 @@ fn parse_row(row: Row) -> Vec<Option<String>> {
     .filter(|x| !x.is_empty())
     .peekable();
 
-  if raw.peek() == None {
+  if raw.peek().is_none() {
     return r;
   }
 
@@ -174,8 +180,8 @@ fn parse_row(row: Row) -> Vec<Option<String>> {
   if regex_match_opt!(GROUP_REGEX, raw.peek()) {
     let binding = raw.next().unwrap();
     let mut iter = binding.split(&[' ', ' ', '\n']).peekable();
-    r[0] = iter.next().and_then(|x| Some(x.trim().into())); // group
-    r[1] = iter.next().and_then(|x| Some(x.replace("п/г", "").trim().into())); // subgroup
+    r[0] = iter.next().map(|x| x.trim().into()); // group
+    r[1] = iter.next().map(|x| x.replace("п/г", "").trim().into()); // subgroup
   }
 
   if regex_match_opt!(NUM_REGEX, raw.peek()) {
@@ -196,13 +202,13 @@ fn parse_row(row: Row) -> Vec<Option<String>> {
             .collect::<Vec<&str>>()
             .join(", "),
         );
-        r[4] = name_n_teacher.last().and_then(|x| Some(x.trim().into()));
+        r[4] = name_n_teacher.last().map(|x| x.trim().into());
       }
       _ => (),
     };
   }
 
-  r[5] = raw.next().and_then(|x| Some(x)); // classroom
+  r[5] = raw.next(); // classroom
   r
 }
 
@@ -248,7 +254,7 @@ fn into_text(html: &str) -> String {
   let mut res = String::new();
 
   while let Some(fragment) = fragments.next() {
-    let mut chars = fragment.chars().into_iter().peekable();
+    let mut chars = fragment.chars().peekable();
     let mut whitespaces_only = true;
     while let Some(c) = chars.next() {
       let next = chars.peek();

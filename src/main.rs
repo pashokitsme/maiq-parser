@@ -10,7 +10,7 @@ use maiq_shared::{Group, Snapshot};
 async fn main() {
   dotenvy::dotenv().ok();
 
-  let mut args = env::args().into_iter().skip(1);
+  let mut args = env::args().skip(1);
   let mut fetch = None;
   let mut target_group = None;
 
@@ -35,7 +35,7 @@ async fn main() {
 
   match fetch_snapshot(&fetch.unwrap()).await {
     Ok(snapshot) => match target_group {
-      Some(g) => display_group(snapshot, &*g),
+      Some(g) => display_group(snapshot, &g),
       None => print_snapshot(&snapshot),
     },
     Err(err) => eprintln!("error -> {err}"),

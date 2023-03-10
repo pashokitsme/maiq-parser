@@ -61,6 +61,6 @@ fn load_defaults() -> Vec<DefaultDay> {
 
 fn read(path: &String) -> Option<DefaultDay> {
   fs::read_to_string(path).ok().map(|content| {
-    serde_json::from_str(content.as_str()).expect(format!("Can't parse default timetable from `{}`", &path).as_str())
+    serde_json::from_str(content.as_str()).unwrap_or_else(|_| panic!("Can't parse default timetable from `{}`", &path))
   })
 }
