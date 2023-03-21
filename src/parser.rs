@@ -20,7 +20,7 @@ pub fn parse(html: &str, possible_date: DateTime<Utc>) -> Result<Snapshot, Parse
   let mut prev = None;
 
   let mut date = None;
-  for _ in 0..3 {
+  for _ in 0..2 {
     if let Some(d) = parse_date(table.next().unwrap()) {
       date = Some(d);
       break;
