@@ -20,17 +20,6 @@ fn rcopy(from: &Path, to: &Path) {
   }
 }
 
-fn archive() {
-  // tar -c -f ./maiq-parser.tar.gz -z -l maiq-parser.exe default\*
-  Command::new("tar")
-    .arg("-c")
-    .args(["-f", "./target/cli/maiq-parser.tar.gz"])
-    .arg("-z")
-    .args(["-l", "maiq-parser.exe", "default\\*"])
-    .output()
-    .expect("Failed to make archive");
-}
-
 fn main() {
   println!("cargo:rerun-if-changed=defaults/");
   if get_build_profile_name() != "cli" {
@@ -42,5 +31,4 @@ fn main() {
   let default = Path::new(&manifest_dir_str).join("default");
   let output = Path::new(&manifest_dir_str).join("target\\cli").join("default");
   rcopy(&default, &output);
-  archive();
 }

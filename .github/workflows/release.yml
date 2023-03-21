@@ -16,6 +16,11 @@ jobs:
       - name: Build
         run: cargo +stable-msvc build --profile cli -F cli
 
+      - name: Archive build files
+        run: |
+          cd ./target/cli        
+          tar -c -f maiq-parser.tar.gz -z -l maiq-parser.exe default/*
+
       - name: Release
         uses: marvinpinto/action-automatic-releases@v1.2.1
         with:
