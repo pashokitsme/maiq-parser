@@ -1,4 +1,4 @@
-use std::{env, fs, path::Path, process::Command};
+use std::{env, fs, path::Path};
 
 fn get_build_profile_name() -> String {
   env::var("OUT_DIR")
@@ -23,7 +23,6 @@ fn rcopy(from: &Path, to: &Path) {
 fn main() {
   println!("cargo:rerun-if-changed=defaults/");
   if get_build_profile_name() != "cli" {
-    println!("Profile is not cli");
     return;
   }
 

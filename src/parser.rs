@@ -19,14 +19,22 @@ pub fn parse(html: &str, possible_date: DateTime<Utc>) -> Result<Snapshot, Parse
   let mut lessons = vec![];
   let mut prev = None;
 
-  let mut date = None;
-  for _ in 0..2 {
-    if let Some(d) = parse_date(table.next().unwrap()) {
-      date = Some(d);
-      break;
+  let date = {
+    let mut date = None;
+    for _ in 0..2 {
+      if let Some(d) = parse_date(table.next().unwrap()) {
+        date = Some(d);
+        break;
+      }
     }
-  }
-  let date = date.unwrap_or(possible_date);
+
+    let date = date.unwrap_or(possible_date);
+    if possible_date > date {
+      possible_date
+    } else {
+      date
+    }
+  };
 
   for row in table {
     let row = parse_row(row);
