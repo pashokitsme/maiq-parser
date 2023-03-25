@@ -1,20 +1,26 @@
 #[cfg(feature = "cli")]
 mod cli {
-  use maiq_parser::{fetch_snapshot, warmup_defaults, Fetch};
+  use maiq_parser::{compare::distinct, fetch_snapshot, warmup_defaults, Fetch};
   use maiq_shared::{Group, Snapshot};
   use std::{env, process::exit};
+
+  enum Command {
+    Fetch(Fetch),
+    Distinct,
+  }
 
   pub async fn run() {
     dotenvy::dotenv().ok();
 
     let mut args = env::args().skip(1);
-    let mut fetch = None;
+    let mut command = None;
     let mut target_group = None;
 
     while let Some(arg) = args.next() {
       match &*arg {
-        "today" | "t" => set_if_none(&mut fetch, Fetch::Today),
-        "next" | "n" => set_if_none(&mut fetch, Fetch::Next),
+        "today" | "t" => set_if_none(&mut command, Command::Fetch(Fetch::Today)),
+        "next" | "n" => set_if_none(&mut command, Command::Fetch(Fetch::Today)),
+        "distinct" | "dt" => set_if_none(&mut command, Command::Distinct),
         "--group" | "-g" => match args.next() {
           Some(group) => set_if_none(&mut target_group, group),
           None => usage_exit(),
@@ -24,18 +30,21 @@ mod cli {
       }
     }
 
-    if fetch.is_none() {
+    if command.is_none() {
       usage_exit()
     }
 
     warmup_defaults();
 
-    match fetch_snapshot(&fetch.unwrap()).await {
-      Ok(snapshot) => match target_group {
-        Some(g) => display_group(snapshot, &g),
-        None => print_snapshot(&snapshot),
+    match command.unwrap() {
+      Command::Fetch(ref fetch) => match fetch_snapshot(fetch).await {
+        Ok(snapshot) => match target_group {
+          Some(g) => display_group(snapshot, &g),
+          None => print_snapshot(&snapshot),
+        },
+        Err(err) => eprintln!("error -> {err}"),
       },
-      Err(err) => eprintln!("error -> {err}"),
+      Command::Distinct => show_distinct().await,
     }
   }
 
@@ -48,15 +57,23 @@ mod cli {
 
   fn usage_exit() {
     println!(
-      r#"usage: <fetch> <options>
-    fetch: 
+      r#"использование: <команда> <параметры>
+    команда: 
       today (t) | next (n) 
-      
+      distinct (dt)
     options:
-      --group (-g) <name> - print only group
-      --help (-h) - this message"#
+      --group (-g) <name> - вывести только указанную группу
+      --help (-h) - это сообщение"#
     );
     exit(0);
+  }
+
+  async fn show_distinct() {
+    let today = fetch_snapshot(&Fetch::Today).await.ok();
+    let other = fetch_snapshot(&Fetch::Next).await.ok();
+    for group in distinct(today.as_ref(), other.as_ref()) {
+      print!("{} ", group);
+    }
   }
 
   fn display_group(snapshot: Snapshot, group_name: &str) {

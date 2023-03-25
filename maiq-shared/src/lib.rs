@@ -1,5 +1,6 @@
 pub mod default;
 pub mod utils;
+pub mod compare;
 
 use chrono::{DateTime, Datelike, Duration, Utc};
 use serde::{Deserialize, Serialize};
