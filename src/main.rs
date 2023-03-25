@@ -19,7 +19,7 @@ mod cli {
     while let Some(arg) = args.next() {
       match &*arg {
         "today" | "t" => set_if_none(&mut command, Command::Fetch(Fetch::Today)),
-        "next" | "n" => set_if_none(&mut command, Command::Fetch(Fetch::Today)),
+        "next" | "n" => set_if_none(&mut command, Command::Fetch(Fetch::Next)),
         "distinct" | "dt" => set_if_none(&mut command, Command::Distinct),
         "--group" | "-g" => match args.next() {
           Some(group) => set_if_none(&mut target_group, group),
