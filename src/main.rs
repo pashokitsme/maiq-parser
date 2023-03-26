@@ -76,7 +76,7 @@ mod cli {
   async fn show_distinct() {
     let today = fetch_snapshot(&Fetch::Today).await.ok();
     let other = fetch_snapshot(&Fetch::Next).await.ok();
-    for group in distinct(other.as_ref(), other.as_ref()) {
+    for group in distinct(today.as_ref(), other.as_ref()) {
       print!("{} ", group);
     }
   }

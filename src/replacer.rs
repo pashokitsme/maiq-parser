@@ -1,6 +1,5 @@
-use std::fs;
-
 use chrono::{DateTime, Datelike, Utc};
+use include_dir::{include_dir, Dir};
 #[cfg(not(feature = "cli"))]
 use log::warn;
 use maiq_shared::{default::DefaultDay, utils::time, Lesson};
@@ -8,6 +7,8 @@ use maiq_shared::{default::DefaultDay, utils::time, Lesson};
 lazy_static! {
   pub static ref REPLECEMENTS: Vec<DefaultDay> = load_defaults();
 }
+
+static DEFAULT_JSON_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/default/");
 
 pub fn replace_or_clone(num: u8, group_name: &str, lesson: &Lesson, date: DateTime<Utc>) -> Lesson {
   let mut lesson = match lesson.name.as_str() {
@@ -39,28 +40,8 @@ pub fn replace(num: u8, group_name: &str, date: DateTime<Utc>) -> Option<Lesson>
 }
 
 fn load_defaults() -> Vec<DefaultDay> {
-  ["mon", "tue", "wed", "thu", "fri", "sat"]
-    .iter()
-    .map(|f| {
-      let path = format!("default/{}.json", f);
-      (read(&path), path)
-    })
-    .filter(|(f, path)| match f {
-      Some(_) => true,
-      None => {
-        #[cfg(not(feature = "cli"))]
-        warn!("No default found in {}", path);
-        #[cfg(feature = "cli")]
-        eprintln!("warn -> no default found in {}", path);
-        false
-      }
-    })
-    .map(|f| f.0.unwrap())
+  DEFAULT_JSON_DIR
+    .files()
+    .map(|f| serde_json::from_str(f.contents_utf8().expect("Unable to read default file")).expect("Unable to parse .json"))
     .collect::<Vec<DefaultDay>>()
-}
-
-fn read(path: &String) -> Option<DefaultDay> {
-  fs::read_to_string(path).ok().map(|content| {
-    serde_json::from_str(content.as_str()).unwrap_or_else(|_| panic!("Can't parse default timetable from `{}`", &path))
-  })
 }
