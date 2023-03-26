@@ -2,11 +2,12 @@
 mod cli {
   use maiq_parser::{compare::distinct, fetch_snapshot, warmup_defaults, Fetch};
   use maiq_shared::{Group, Snapshot};
-  use std::{env, process::exit};
+  use std::{env, fs, io::BufWriter, process::exit};
 
   enum Command {
     Fetch(Fetch),
     Distinct,
+    Dump(Fetch),
   }
 
   pub async fn run() {
@@ -21,6 +22,8 @@ mod cli {
         "today" | "t" => set_if_none(&mut command, Command::Fetch(Fetch::Today)),
         "next" | "n" => set_if_none(&mut command, Command::Fetch(Fetch::Next)),
         "distinct" | "dt" => set_if_none(&mut command, Command::Distinct),
+        "dump-today" => set_if_none(&mut command, Command::Dump(Fetch::Today)),
+        "dump-next" => set_if_none(&mut command, Command::Dump(Fetch::Next)),
         "--group" | "-g" => match args.next() {
           Some(group) => set_if_none(&mut target_group, group),
           None => usage_exit(),
@@ -45,6 +48,7 @@ mod cli {
         Err(err) => eprintln!("error -> {err}"),
       },
       Command::Distinct => show_distinct().await,
+      Command::Dump(ref fetch) => do_dump(fetch).await,
     }
   }
 
@@ -58,9 +62,10 @@ mod cli {
   fn usage_exit() {
     println!(
       r#"использование: <команда> <параметры>
-    команда: 
-      today (t) | next (n) 
+    команда:
+      today (t) | next (n)
       distinct (dt)
+      dump-today | dump-next
     options:
       --group (-g) <name> - вывести только указанную группу
       --help (-h) - это сообщение"#
@@ -71,9 +76,22 @@ mod cli {
   async fn show_distinct() {
     let today = fetch_snapshot(&Fetch::Today).await.ok();
     let other = fetch_snapshot(&Fetch::Next).await.ok();
-    for group in distinct(today.as_ref(), other.as_ref()) {
+    for group in distinct(other.as_ref(), other.as_ref()) {
       print!("{} ", group);
     }
+  }
+
+  async fn do_dump(fetch: &Fetch) {
+    let snapshot = fetch_snapshot(fetch).await;
+    if let Err(err) = snapshot {
+      println!("error -> {}", err);
+      return;
+    }
+    let snapshot = snapshot.unwrap();
+    let file_name = format!("{}_{}.json", snapshot.date.format("%d-%m-%Y"), snapshot.uid);
+    let file = fs::File::create(file_name).expect("unable to open file");
+    let writer = BufWriter::new(file);
+    serde_json::to_writer_pretty(writer, &snapshot).expect("unable to write file");
   }
 
   fn display_group(snapshot: Snapshot, group_name: &str) {
