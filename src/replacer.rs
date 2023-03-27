@@ -42,7 +42,7 @@ pub fn replace(num: u8, group_name: &str, date: DateTime<Utc>) -> Option<Lesson>
 fn load_defaults() -> Vec<DefaultDay> {
   DEFAULT_JSON_DIR
     .files()
-    .filter(|file| file.path().ends_with(".json"))
+    .filter(|file| matches!(file.path().extension(), Some(ext) if ext == "json"))
     .map(|file| {
       serde_json::from_str(file.contents_utf8().expect("Unable to read default file"))
         .unwrap_or_else(|_| panic!("Unable to parse {}", file.path().display()))
