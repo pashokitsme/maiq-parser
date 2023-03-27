@@ -8,17 +8,17 @@ lazy_static::lazy_static! {
 }
 
 pub fn distinct(previous: Option<&Snapshot>, new: Option<&Snapshot>) -> Vec<String> {
-  let mut groups_to_update = GROUPS.clone();
-
   let (previous, new) = match (previous, new) {
     (Some(l), Some(r)) if l.uid == r.uid => return vec![],
     (Some(l), Some(r)) => (l, r),
     (Some(_), None) => return vec![],
-    (None, Some(_)) => return groups_to_update,
+    (None, Some(_)) => return GROUPS.clone(),
     (None, None) => return vec![],
   };
 
-  let updated = |name: &String| -> bool {
+  let mut changes = GROUPS.clone();
+
+  let is_updated = |name: &String| -> bool {
     let prev = previous.group(&*name);
     let new = new.group(&*name);
 
@@ -30,6 +30,6 @@ pub fn distinct(previous: Option<&Snapshot>, new: Option<&Snapshot>) -> Vec<Stri
     }
   };
 
-  groups_to_update.retain(updated);
-  groups_to_update
+  changes.retain(is_updated);
+  changes
 }
