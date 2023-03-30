@@ -152,7 +152,7 @@ fn parse_lesson(row: Vec<Option<String>>, prev: &Option<ParsedLesson>) -> Result
 
   let classroom = not_empty!(next!());
 
-  let lesson = Lesson { num: 0, subgroup, name, teacher, classroom };
+  let lesson = Lesson { num: None, subgroup, name, teacher, classroom };
   let parsed = ParsedLesson { group, nums, lesson };
   Ok(Some(parsed))
 }

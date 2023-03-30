@@ -114,7 +114,7 @@ mod cli {
   fn print_group(g: &Group) {
     println!("Группа {} #{} ({})", g.name, g.uid, g.lessons.len());
     for lesson in &g.lessons {
-      print!("\t#{} ", lesson.num);
+      print!("\t#{} ", if let Some(num) = lesson.num { num.to_string() } else { "-".to_string() });
       if let Some(sub) = lesson.subgroup {
         print!("(п. {}) ", sub)
       }

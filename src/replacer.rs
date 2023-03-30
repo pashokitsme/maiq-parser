@@ -15,7 +15,7 @@ pub fn replace_or_clone(num: u8, group_name: &str, lesson: &Lesson, date: DateTi
     "По расписанию" | "по расписанию" => replace(num, group_name, date).unwrap_or_else(|| lesson.clone()),
     _ => lesson.clone(),
   };
-  lesson.num = num;
+  lesson.num = Some(num);
   lesson
 }
 
@@ -35,7 +35,7 @@ pub fn replace(num: u8, group_name: &str, date: DateTime<Utc>) -> Option<Lesson>
     })
     .map(|l| {
       let l = l.clone();
-      Lesson { num, name: l.name, subgroup: l.subgroup, teacher: l.teacher, classroom: l.classroom }
+      Lesson { num: Some(num), name: l.name, subgroup: l.subgroup, teacher: l.teacher, classroom: l.classroom }
     })
 }
 
