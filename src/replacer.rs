@@ -1,7 +1,5 @@
 use chrono::{DateTime, Datelike, Utc};
 use include_dir::{include_dir, Dir};
-#[cfg(not(feature = "cli"))]
-use log::warn;
 use maiq_shared::{default::DefaultDay, utils::time, Lesson};
 
 lazy_static! {
@@ -42,6 +40,10 @@ pub fn replace(num: u8, group_name: &str, date: DateTime<Utc>) -> Option<Lesson>
 fn load_defaults() -> Vec<DefaultDay> {
   DEFAULT_JSON_DIR
     .files()
-    .map(|f| serde_json::from_str(f.contents_utf8().expect("Unable to read default file")).expect("Unable to parse .json"))
+    .filter(|file| matches!(file.path().extension(), Some(ext) if ext == "json"))
+    .map(|file| {
+      serde_json::from_str(file.contents_utf8().expect("Unable to read default file"))
+        .unwrap_or_else(|_| panic!("Unable to parse {}", file.path().display()))
+    })
     .collect::<Vec<DefaultDay>>()
 }

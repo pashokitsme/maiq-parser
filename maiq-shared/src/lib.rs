@@ -1,3 +1,4 @@
+pub mod compare;
 pub mod default;
 pub mod utils;
 
@@ -149,7 +150,10 @@ impl FetchUrl for Fetch {
   fn date(&self) -> DateTime<Utc> {
     let now = time::now_date();
     match self {
-      Fetch::Today => now,
+      Fetch::Today => match now.weekday() {
+        chrono::Weekday::Sun => time::now_date_offset(-1),
+        _ => now,
+      },
       Fetch::Next => match now.weekday() {
         chrono::Weekday::Sat => time::now_date_offset(2),
         _ => time::now_date_offset(1),
