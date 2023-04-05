@@ -7,13 +7,13 @@ pub struct DefaultDay {
   pub groups: Vec<DefaultGroup>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct DefaultGroup {
   pub name: String,
   pub lessons: Vec<DefaultLesson>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct DefaultLesson {
   pub num: u8,
   pub name: String,
