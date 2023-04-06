@@ -12,6 +12,8 @@ pub use parser::parse;
 pub mod parser;
 pub mod replacer;
 
+mod env;
+
 #[derive(thiserror::Error, Debug)]
 pub enum ParserError {
   #[error("HTML Table not found")]

@@ -1,8 +1,9 @@
-use std::borrow::Cow;
+use std::{borrow::Cow, time::Instant};
 
-use tl::{Node, NodeHandle, ParseError, Parser, ParserOptions};
+use tl::{NodeHandle, ParseError, Parser, ParserOptions};
 
 pub fn parse_html(html: &str) -> Result<(), ParseError> {
+  let now = Instant::now();
   let dom = tl::parse(html, ParserOptions::default())?;
   let parser = dom.parser();
   let table = dom
@@ -12,7 +13,8 @@ pub fn parse_html(html: &str) -> Result<(), ParseError> {
     .unwrap();
 
   parse_table(table.get(parser).unwrap().inner_html(parser))?;
-
+  let elapsed = now.elapsed();
+  println!("Elapsed: {elapsed:?}");
   Ok(())
 }
 
@@ -21,38 +23,23 @@ fn parse_table(html: Cow<str>) -> Result<(), ParseError> {
   let parser = dom.parser();
   let trs = dom.query_selector("tr").expect("Unable to select tr");
 
-  for tr in trs.map(|tr| tr.get(parser).unwrap()).skip(2) {
-    for td in tr
-      .children()
-      .expect("Unable to get children")
-      .top()
-      .iter()
-      .filter_map(|handle| get_inner_text(parser, handle))
-    {
-      println!("{:?}", td);
-    }
-    println!()
-  }
+  let mut table = trs
+    .map(|tr| tr.get(parser).unwrap())
+    .skip(2)
+    .map(|tr| {
+      tr.children()
+        .expect("Unable to get children")
+        .top()
+        .iter()
+        .filter_map(|handle| get_inner_text(parser, handle))
+        .map(normalize)
+        .collect::<Vec<String>>()
+    })
+    .collect::<Vec<Vec<String>>>();
+
+  println!("{:#?}", table);
   Ok(())
 }
-
-/*
-     .iter()
-     .filter(|tag| tag.children().map(|child| child.top().len() < 2).unwrap_or(false))
-     .filter_map(|node| {
-       node
-         .children()?
-         .top()
-         .iter()
-         .find(|node| {
-           node
-             .get(parser)
-             .unwrap()
-             .find_node(parser, &mut |node| node.as_tag().map_or(false, |tag| tag.name() == "span"))
-             .is_some()
-         })
-         .map(|node| node.get(parser))
-*/
 
 fn get_inner_text(parser: &Parser, node: &NodeHandle) -> Option<String> {
   let res = node.get(parser)?.inner_text(parser);
@@ -61,4 +48,31 @@ fn get_inner_text(parser: &Parser, node: &NodeHandle) -> Option<String> {
     0 => None,
     _ => Some(res.into()),
   }
+}
+
+fn normalize(text: String) -> String {
+  let text = text.as_str().replace("&nbsp;", " ");
+
+  let mut chars = text.chars().peekable();
+  let mut whitespaces_only = true;
+  let mut res = String::new();
+
+  while let Some(c) = chars.next() {
+    let next = chars.peek();
+    if whitespaces_only && !c.is_whitespace() {
+      whitespaces_only = false;
+    }
+
+    if c.is_whitespace() && ((next.is_some() && next.unwrap().is_whitespace()) || next.is_none()) {
+      continue;
+    }
+
+    match c {
+      '\n' => (),
+      c if c.is_whitespace() => res.push(' '),
+      c => res.push(c),
+    }
+  }
+
+  res
 }
