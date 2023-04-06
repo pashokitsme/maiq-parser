@@ -1,99 +1,18 @@
-use scraper::Html;
 use table_extract::Row;
 
-use crate::{replacer, ParserError};
-use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, Utc};
+use crate::{parser::into_text, replacer, ParserError};
+use chrono::{DateTime, Utc};
 use maiq_shared::*;
 use regex::Regex;
 
 #[derive(Debug, Clone)]
-struct ParsedLesson {
+pub struct ParsedLesson {
   pub group: String,
   pub nums: Vec<u8>,
   pub lesson: Lesson,
 }
 
-pub fn parse(html: &str, possible_date: DateTime<Utc>) -> Result<Snapshot, ParserError> {
-  let table = table_extract::Table::find_first(html).ok_or(ParserError::NoTable)?;
-  let mut table = table.into_iter();
-  let mut lessons = vec![];
-  let mut prev = None;
-
-  let date = {
-    let mut date = None;
-    for _ in 0..2 {
-      if let Some(d) = parse_date(table.next().unwrap()) {
-        date = Some(d);
-        break;
-      }
-    }
-
-    let date = date.unwrap_or(possible_date);
-    if possible_date > date {
-      possible_date
-    } else {
-      date
-    }
-  };
-
-  for row in table {
-    let row = parse_row(row);
-    let lesson = parse_lesson(row, &prev)?;
-    if let Some(lesson) = lesson {
-      prev = Some(lesson.clone());
-      lessons.push(lesson);
-    }
-  }
-
-  let groups = map_lessons_to_groups(lessons, date);
-
-  Ok(Snapshot::new(groups, date))
-}
-
-const MONTHS: [&str; 12] =
-  ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"];
-
-fn parse_date(row: Row) -> Option<DateTime<Utc>> {
-  let content = row.into_iter().map(|x| into_text(x)).collect::<String>();
-  let mut split = content.split(' ');
-
-  while let Some(word) = split.next() {
-    let day = word.trim().parse::<u32>();
-    if day.is_err() {
-      continue;
-    }
-
-    let day = day.unwrap();
-
-    let month = match split.next() {
-      None => continue,
-      Some(month) => MONTHS.iter().position(|&m| m == month).map(|x| x as u32 + 1),
-    };
-
-    let month = match month {
-      Some(m) => m,
-      None => continue,
-    };
-
-    let year = match split.next() {
-      None => continue,
-      Some(year) => {
-        let y = &year.trim()[..4];
-        match y.parse::<i32>() {
-          Ok(y) => y,
-          Err(_) => continue,
-        }
-      }
-    };
-
-    let date = NaiveDate::from_ymd_opt(year, month, day).unwrap();
-    return Some(DateTime::from_utc(NaiveDateTime::new(date, NaiveTime::default()), Utc));
-  }
-
-  None
-}
-
-fn parse_lesson(row: Vec<Option<String>>, prev: &Option<ParsedLesson>) -> Result<Option<ParsedLesson>, ParserError> {
+pub fn parse_lesson(row: Vec<Option<String>>, prev: &Option<ParsedLesson>) -> Result<Option<ParsedLesson>, ParserError> {
   macro_rules! prev {
     () => {
       match prev {
@@ -157,7 +76,7 @@ fn parse_lesson(row: Vec<Option<String>>, prev: &Option<ParsedLesson>) -> Result
   Ok(Some(parsed))
 }
 
-fn parse_row(row: Row) -> Vec<Option<String>> {
+pub fn parse_row(row: Row) -> Vec<Option<String>> {
   lazy_static! {
     static ref GROUP_REGEX: Regex = Regex::new(r#"[А-я]{1,2}\d-\d{2}"#).unwrap();
     static ref NUM_REGEX: Regex = Regex::new(r#"^(\d{1},{0,1})*$"#).unwrap();
@@ -220,7 +139,7 @@ fn parse_row(row: Row) -> Vec<Option<String>> {
   r
 }
 
-fn map_lessons_to_groups(vec: Vec<ParsedLesson>, date: DateTime<Utc>) -> Vec<Group> {
+pub(super) fn map_lessons_to_groups(vec: Vec<ParsedLesson>, date: DateTime<Utc>) -> Vec<Group> {
   let mut groups: Vec<Group> = vec![];
   for parsed in vec.into_iter() {
     for num in parsed
@@ -254,37 +173,4 @@ fn map_lessons_to_groups(vec: Vec<ParsedLesson>, date: DateTime<Utc>) -> Vec<Gro
     g.uid = g.uid()
   });
   groups
-}
-
-fn into_text(html: &str) -> String {
-  let doc = Html::parse_document(html);
-  let mut fragments = doc.root_element().text().peekable();
-  let mut res = String::new();
-
-  while let Some(fragment) = fragments.next() {
-    let mut chars = fragment.chars().peekable();
-    let mut whitespaces_only = true;
-    while let Some(c) = chars.next() {
-      let next = chars.peek();
-      if whitespaces_only && !c.is_whitespace() {
-        whitespaces_only = false;
-      }
-
-      if c.is_whitespace() && ((next.is_some() && next.unwrap().is_whitespace()) || next.is_none()) {
-        continue;
-      }
-
-      match c {
-        '\n' => (),
-        c if c.is_whitespace() => res.push(' '),
-        c => res.push(c),
-      }
-    }
-
-    if whitespaces_only && fragments.peek().is_some() {
-      res.push(' ')
-    }
-  }
-
-  res
 }
