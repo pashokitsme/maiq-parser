@@ -4,50 +4,48 @@ use scraper::Html;
 
 use crate::ParserError;
 
-use self::{
-  date::parse_date,
-  snapshot::{map_lessons_to_groups, parse_lesson, parse_row},
-};
+use self::date::parse_date;
 
 mod date;
-mod snapshot;
+pub mod snapshot;
 pub mod table;
 
 pub fn parse(html: &str, possible_date: DateTime<Utc>) -> Result<Snapshot, ParserError> {
-  let table = table_extract::Table::find_first(html).ok_or(ParserError::NoTable)?;
-  let mut table = table.into_iter();
-  let mut lessons = vec![];
-  let mut prev = None;
+  todo!();
+  // let table = table_extract::Table::find_first(html).ok_or(ParserError::NoTable)?;
+  // let mut table = table.into_iter();
+  // let mut lessons = vec![];
+  // let mut prev = None;
 
-  let date = {
-    let mut date = None;
-    for _ in 0..2 {
-      if let Some(d) = parse_date(table.next().unwrap()) {
-        date = Some(d);
-        break;
-      }
-    }
+  // let date = {
+  //   let mut date = None;
+  //   for _ in 0..2 {
+  //     if let Some(d) = parse_date(table.next().unwrap()) {
+  //       date = Some(d);
+  //       break;
+  //     }
+  //   }
 
-    let date = date.unwrap_or(possible_date);
-    if possible_date > date {
-      possible_date
-    } else {
-      date
-    }
-  };
+  //   let date = date.unwrap_or(possible_date);
+  //   if possible_date > date {
+  //     possible_date
+  //   } else {
+  //     date
+  //   }
+  // };
 
-  for row in table {
-    let row = parse_row(row);
-    let lesson = parse_lesson(row, &prev)?;
-    if let Some(lesson) = lesson {
-      prev = Some(lesson.clone());
-      lessons.push(lesson);
-    }
-  }
+  // for row in table {
+  //   let row = parse_row(row);
+  //   let lesson = parse_lesson(row, &prev)?;
+  //   if let Some(lesson) = lesson {
+  //     prev = Some(lesson.clone());
+  //     lessons.push(lesson);
+  //   }
+  // }
 
-  let groups = map_lessons_to_groups(lessons, date);
+  // let groups = map_lessons_to_groups(lessons, date);
 
-  Ok(Snapshot::new(groups, date))
+  // Ok(Snapshot::new(groups, date))
 }
 
 fn into_text(html: &str) -> String {

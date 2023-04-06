@@ -1,8 +1,16 @@
-use std::{borrow::Cow, time::Instant};
+use std::{
+  borrow::Cow,
+  time::{Duration, Instant},
+};
 
 use tl::{NodeHandle, ParseError, Parser, ParserOptions};
 
-pub fn parse_html(html: &str) -> Result<(), ParseError> {
+pub struct Table {
+  pub values: Vec<Vec<String>>,
+  pub elapsed: Duration,
+}
+
+pub fn parse_html(html: &str) -> Result<Table, ParseError> {
   let now = Instant::now();
   let dom = tl::parse(html, ParserOptions::default())?;
   let parser = dom.parser();
@@ -12,18 +20,17 @@ pub fn parse_html(html: &str) -> Result<(), ParseError> {
     .last()
     .unwrap();
 
-  parse_table(table.get(parser).unwrap().inner_html(parser))?;
+  let values = parse_table(table.get(parser).unwrap().inner_html(parser))?;
   let elapsed = now.elapsed();
-  println!("Elapsed: {elapsed:?}");
-  Ok(())
+  Ok(Table { values, elapsed })
 }
 
-fn parse_table(html: Cow<str>) -> Result<(), ParseError> {
+fn parse_table(html: Cow<str>) -> Result<Vec<Vec<String>>, ParseError> {
   let dom = tl::parse(&html, ParserOptions::default())?;
   let parser = dom.parser();
   let trs = dom.query_selector("tr").expect("Unable to select tr");
 
-  let mut table = trs
+  let table = trs
     .map(|tr| tr.get(parser).unwrap())
     .skip(2)
     .map(|tr| {
@@ -37,8 +44,7 @@ fn parse_table(html: Cow<str>) -> Result<(), ParseError> {
     })
     .collect::<Vec<Vec<String>>>();
 
-  println!("{:#?}", table);
-  Ok(())
+  Ok(table)
 }
 
 fn get_inner_text(parser: &Parser, node: &NodeHandle) -> Option<String> {
@@ -52,7 +58,6 @@ fn get_inner_text(parser: &Parser, node: &NodeHandle) -> Option<String> {
 
 fn normalize(text: String) -> String {
   let text = text.as_str().replace("&nbsp;", " ");
-
   let mut chars = text.chars().peekable();
   let mut whitespaces_only = true;
   let mut res = String::new();

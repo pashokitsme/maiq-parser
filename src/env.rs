@@ -1,8 +1,6 @@
 use std::str::FromStr;
 
-use chrono::Duration;
 use lazy_static::lazy_static;
-use std::ops::Deref;
 
 macro_rules! env_params {
   {$($inner: ty as $tt: ident { $closure: expr } ),*} => {
@@ -10,9 +8,15 @@ macro_rules! env_params {
       #[derive(Debug, Clone)]
       pub struct $tt($inner);
 
-      impl Deref for $tt {
-        type Target = $inner;
-        fn deref(&self) -> &Self::Target { &self.0 }
+      // impl Deref for $tt {
+      //   type Target = $inner;
+      //   fn deref(&self) -> &Self::Target { &self.0 }
+      // }
+
+      impl From<$tt> for $inner {
+        fn from(value: $tt) -> $inner {
+          value.0
+        }
       }
 
       impl FromStr for $tt {
@@ -42,7 +46,7 @@ macro_rules! vars {
       $(static ref $var_name: $ty = self::parse_var::<$ty>(stringify!($var_name));)*
     }
 
-    $(pub fn $getter() -> &'static $ty { &*$var_name })*
+    $(pub fn $getter() -> $ty { $var_name.clone() })*
 
     pub fn init() {
       $(
@@ -77,6 +81,6 @@ env_default! {
 }
 
 vars! {
-  groups(GROUPS) -> Strings,
-  teachers(TEACHERS) -> Strings
+  groups(GROUPS) -> Strings
+  // teachers(TEACHERS) -> Strings
 }

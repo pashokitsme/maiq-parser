@@ -136,9 +136,12 @@ mod cli {
 #[tokio::main]
 async fn main() {
   // cli::run().await;
+  dotenvy::dotenv().ok();
+  maiq_parser::env::init();
   use maiq_parser::{fetch, parser::table::parse_html, Fetch};
   let html = fetch(&Fetch::Today).await.unwrap();
-  parse_html(&html).expect("Parse table error");
+  let table = parse_html(&html).expect("Parse table error");
+  _ = maiq_parser::parser::snapshot::parse_snapshot(table);
 }
 
 #[cfg(not(feature = "cli"))]

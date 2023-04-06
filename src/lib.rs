@@ -11,8 +11,7 @@ pub use parser::parse;
 
 pub mod parser;
 pub mod replacer;
-
-mod env;
+pub mod env;
 
 #[derive(thiserror::Error, Debug)]
 pub enum ParserError {
