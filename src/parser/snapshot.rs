@@ -75,8 +75,7 @@ fn assign_lessons_to_groups(lessons: Vec<RawLesson>, groups: &mut [Group]) {
 
     let nums = match lesson.num {
       Num::Actual(x) => x,
-      Num::Previous => "Нет".into(),
-      Num::None => "Нет".into(),
+      _ => "Нет".into(),
     };
 
     for num in nums.split(',').map(|x| x.trim()) {
