@@ -118,7 +118,7 @@ mod cli {
       print!("{} ", lesson.name);
 
       if let Some(classroom) = lesson.classroom.as_ref() {
-        print!("в {} ", classroom);
+        print!("в {}", classroom);
       }
 
       if let Some(teacher) = lesson.teacher.as_ref() {

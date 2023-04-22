@@ -50,7 +50,7 @@ macro_rules! vars {
           .is_none()
           .then(|| {
             #[cfg(not(feature = "cli"))]
-            warn!("Value {} of type {} is missing. Fallback to default", stringify!($var_name), stringify!($ty));
+            log::warn!("Value {} of type {} is missing. Fallback to default", stringify!($var_name), stringify!($ty));
             #[cfg(feature = "cli")]
             eprintln!("Value {} of type {} is missing. Fallback to default", stringify!($var_name), stringify!($ty))
           });

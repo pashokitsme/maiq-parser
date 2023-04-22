@@ -1,4 +1,4 @@
-use std::slice::Iter;
+use std::{iter::Peekable, slice::Iter};
 
 use log::warn;
 use maiq_shared::{utils::time::now, Group, Lesson, Snapshot};
@@ -9,9 +9,17 @@ use super::{date, table::Table};
 
 type GroupCursor = Option<String>;
 
+#[derive(Debug, Clone, Default)]
+enum Num {
+  Actual(String),
+  Previous,
+  #[default]
+  None,
+}
+
 #[derive(Debug, Default)]
 struct RawLesson {
-  num: Option<String>,
+  num: Num,
   group_name: Option<String>,
   subgroup: Option<String>,
   name: Option<String>,
@@ -37,15 +45,17 @@ pub fn parse_snapshot(table: Table) -> Result<Snapshot, ()> {
     groups.iter().any(|g| g.name == name)
   };
   let mut group_cursor: GroupCursor = None;
-  let lessons = rows
-    .map(|vec| parse_row(&mut vec.iter(), &mut group_cursor, is_name_valid))
+  let mut lessons = rows
+    .map(|vec| parse_row(&mut vec.iter().peekable(), &mut group_cursor, is_name_valid))
     .collect::<Vec<RawLesson>>();
+
+  repair_nums(&mut lessons);
 
   insert(lessons, &mut groups);
   Ok(Snapshot::new(groups, date))
 }
 
-fn insert(lessons: Vec<RawLesson>, groups: &mut Vec<Group>) {
+fn insert(lessons: Vec<RawLesson>, groups: &mut [Group]) {
   for lesson in lessons.into_iter() {
     if lesson.group_name.is_none() {
       continue;
@@ -57,7 +67,14 @@ fn insert(lessons: Vec<RawLesson>, groups: &mut Vec<Group>) {
       continue;
     }
     let group = group.unwrap();
-    for num in lesson.num.as_deref().unwrap_or("Нет").split(',').map(|x| x.trim()) {
+
+    let nums = match lesson.num {
+      Num::Actual(x) => x,
+      Num::Previous => "Нет".into(),
+      Num::None => "Нет".into(),
+    };
+
+    for num in nums.split(',').map(|x| x.trim()) {
       group.lessons.push(Lesson {
         num: num.into(),
         name: lesson.name.clone().unwrap_or("?".into()),
@@ -69,7 +86,7 @@ fn insert(lessons: Vec<RawLesson>, groups: &mut Vec<Group>) {
   }
 }
 
-fn parse_row<'a, F>(row: &mut Iter<String>, group_cursor: &mut GroupCursor, is_name_valid: F) -> RawLesson
+fn parse_row<'a, F>(row: &mut Peekable<Iter<String>>, group_cursor: &mut GroupCursor, is_name_valid: F) -> RawLesson
 where
   F: Fn(&str) -> bool + 'a,
 {
@@ -79,17 +96,49 @@ where
         if !matches!(group_cursor, Some(ref c) if *c == *x) {
           *group_cursor = Some(x.clone());
         }
-        (split_group_name(Some(x)), empty_to_none!(row.next().map(|x| x.trim())))
+        (split_group_name(Some(x)), parse_num(row))
       }
-      Some(x) => (split_group_name(group_cursor.as_deref()), Some(x.as_str())),
-      None => return RawLesson::default(),
+      _ => return RawLesson::default(),
     }
   };
 
   let [name, teacher] = split_teacher(row.next().map(|x| &**x));
   let classroom = empty_to_none!(row.next());
 
-  RawLesson { num: num.map(|x| x.to_string()), group_name, subgroup, name, teacher, classroom: classroom.cloned() }
+  RawLesson { num, group_name, subgroup, name, teacher, classroom: classroom.cloned() }
+}
+
+fn parse_num(row: &mut Peekable<Iter<String>>) -> Num {
+  match row.peek().map(|x| is_num(x)).unwrap_or(false) {
+    true => empty_to_none!(row.next().map(|x| x.trim().to_string()))
+      .map(Num::Actual)
+      .unwrap_or(Num::None),
+    false => Num::Previous,
+  }
+}
+
+fn repair_nums(lessons: &mut [RawLesson]) {
+  let mut iter = lessons.iter_mut();
+  let mut previous = iter.next().unwrap();
+  for lesson in iter {
+    if let Num::Previous = lesson.num {
+      lesson.num = previous.num.clone();
+    }
+    previous = lesson;
+  }
+}
+
+fn is_num(raw: &str) -> bool {
+  const SKIP: [char; 6] = ['(', ')', ',', '.', 'ч', ' '];
+  raw.chars().all(|c| SKIP.contains(&c) || c.is_numeric())
+}
+
+#[test]
+fn __test_is_num() {
+  assert!(is_num("1,2,3"));
+  assert!(is_num("1,2,3(1ч)"));
+  assert!(!is_num("Информационные технологии, Иванов И.Л."));
+  assert!(is_num(""));
 }
 
 fn split_teacher(raw: Option<&str>) -> [Option<String>; 2] {
