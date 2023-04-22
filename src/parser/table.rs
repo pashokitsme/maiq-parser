@@ -35,7 +35,6 @@ fn parse_table(html: Cow<str>) -> anyhow::Result<Vec<Vec<String>>> {
 
   let table = trs
     .map(|tr| tr.get(parser).unwrap())
-    .skip(2)
     .map(|tr| {
       tr.children()
         .unwrap()
