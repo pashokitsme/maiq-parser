@@ -46,7 +46,7 @@ mod cli {
           Some(g) => display_group(snapshot, &g),
           None => print_snapshot(&snapshot),
         },
-        Err(_) => (),
+        Err(x) => eprintln!("error -> {}", x),
       },
       Command::Distinct => show_distinct().await,
       Command::Dump(ref fetch) => dump(fetch).await,

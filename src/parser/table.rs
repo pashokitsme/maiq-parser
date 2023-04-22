@@ -3,20 +3,21 @@ use std::{
   time::{Duration, Instant},
 };
 
-use tl::{NodeHandle, ParseError, Parser, ParserOptions};
+use anyhow::anyhow;
+use tl::{NodeHandle, Parser, ParserOptions};
 
 pub struct Table {
   pub rows: Vec<Vec<String>>,
   pub elapsed: Duration,
 }
 
-pub fn parse_html(html: &str) -> Result<Table, ParseError> {
+pub fn parse_html(html: &str) -> anyhow::Result<Table> {
   let now = Instant::now();
   let dom = tl::parse(html, ParserOptions::default())?;
   let parser = dom.parser();
   let table = dom
     .query_selector("table")
-    .expect("Unable to perform selection")
+    .ok_or_else(|| anyhow!("Unable to perform selection for `table`"))?
     .last()
     .unwrap();
 
@@ -25,17 +26,19 @@ pub fn parse_html(html: &str) -> Result<Table, ParseError> {
   Ok(Table { rows: values, elapsed })
 }
 
-fn parse_table(html: Cow<str>) -> Result<Vec<Vec<String>>, ParseError> {
+fn parse_table(html: Cow<str>) -> anyhow::Result<Vec<Vec<String>>> {
   let dom = tl::parse(&html, ParserOptions::default())?;
   let parser = dom.parser();
-  let trs = dom.query_selector("tr").expect("Unable to select tr");
+  let trs = dom
+    .query_selector("tr")
+    .ok_or_else(|| anyhow!("Unable to select `tr`"))?;
 
   let table = trs
     .map(|tr| tr.get(parser).unwrap())
     .skip(2)
     .map(|tr| {
       tr.children()
-        .expect("Unable to get children")
+        .unwrap()
         .top()
         .iter()
         .filter_map(|handle| get_inner_text(parser, handle))

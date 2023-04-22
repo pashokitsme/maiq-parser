@@ -1,7 +1,8 @@
 use std::{iter::Peekable, slice::Iter};
 
+use chrono::{DateTime, Utc};
 use log::warn;
-use maiq_shared::{utils::time::now, Group, Lesson, Snapshot};
+use maiq_shared::{Group, Lesson, Snapshot};
 
 use crate::env;
 
@@ -36,26 +37,30 @@ macro_rules! empty_to_none {
   };
 }
 
-pub fn parse_snapshot(table: Table) -> Result<Snapshot, ()> {
+pub fn parse_snapshot(table: Table, fallback_date: DateTime<Utc>) -> anyhow::Result<Snapshot> {
   let mut rows = table.rows.into_iter();
-  let date = date::parse_date(&mut rows).unwrap_or(now());
+  let date = date::parse_date(&mut rows).unwrap_or(fallback_date);
   let mut groups = make_groups();
+  let mut group_cursor: GroupCursor = None;
   let is_name_valid = |name: &str| {
     let name = name.split(' ').next().unwrap_or_default();
     groups.iter().any(|g| g.name == name)
   };
-  let mut group_cursor: GroupCursor = None;
+
   let mut lessons = rows
     .map(|vec| parse_row(&mut vec.iter().peekable(), &mut group_cursor, is_name_valid))
     .collect::<Vec<RawLesson>>();
-
   repair_nums(&mut lessons);
+  assign_lessons_to_groups(lessons, &mut groups);
+  groups.retain(|g| !g.lessons.is_empty());
+  groups
+    .iter_mut()
+    .for_each(|g| g.lessons.sort_by(|a, b| a.num.cmp(&b.num)));
 
-  insert(lessons, &mut groups);
   Ok(Snapshot::new(groups, date))
 }
 
-fn insert(lessons: Vec<RawLesson>, groups: &mut [Group]) {
+fn assign_lessons_to_groups(lessons: Vec<RawLesson>, groups: &mut [Group]) {
   for lesson in lessons.into_iter() {
     if lesson.group_name.is_none() {
       continue;
