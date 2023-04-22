@@ -1,5 +1,6 @@
 #[cfg(feature = "cli")]
 mod cli {
+  use colored::Colorize;
   use maiq_parser::{compare::distinct, snapshot_from_remote, warmup_defaults, Fetch};
   use maiq_shared::{Group, Snapshot};
   use std::{env, fs, io::BufWriter, process::exit};
@@ -109,20 +110,20 @@ mod cli {
   }
 
   fn print_group(g: &Group) {
-    println!("Группа {} #{} ({})", g.name, g.uid, g.lessons.len());
+    println!("Группа {} ({}) ({})", g.name.bright_white(), g.uid.purple(), g.lessons.len());
     for lesson in &g.lessons {
-      print!("\t#{} ", lesson.num);
+      print!("\t{} ", format!("#{}", lesson.num).bright_white());
       if let Some(sub) = lesson.subgroup {
-        print!("(п. {}) ", sub)
+        print!("{} ", format!("(п. {sub})").green())
       }
       print!("{} ", lesson.name);
 
       if let Some(classroom) = lesson.classroom.as_ref() {
-        print!("в {}", classroom);
+        print!("в {}", classroom.green());
       }
 
       if let Some(teacher) = lesson.teacher.as_ref() {
-        print!(". Преподаватель: {}", teacher)
+        print!(". Преподаватель: {}", teacher.green())
       }
       println!()
     }
