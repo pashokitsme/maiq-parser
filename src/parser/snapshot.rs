@@ -98,6 +98,7 @@ where
         }
         (split_group_name(Some(x)), parse_num(row))
       }
+      Some(x) => (split_group_name(group_cursor.as_deref()), Num::Actual(x.clone())),
       _ => return RawLesson::default(),
     }
   };
