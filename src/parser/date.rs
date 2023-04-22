@@ -1,14 +1,10 @@
 use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, Utc};
-use table_extract::Row;
-
-use super::into_text;
-
 const MONTHS: [&str; 12] =
   ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"];
 
-pub fn parse_date(row: Row) -> Option<DateTime<Utc>> {
-  let content = row.into_iter().map(|x| into_text(x)).collect::<String>();
-  let mut split = content.split(' ');
+pub fn parse_date<T: Iterator<Item = Vec<String>>>(row: &mut T) -> Option<DateTime<Utc>> {
+  let x = row.next().unwrap();
+  let mut split = x.first().unwrap().split(' ');
 
   while let Some(word) = split.next() {
     let day = word.trim().parse::<u32>();

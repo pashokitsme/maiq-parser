@@ -8,11 +8,6 @@ macro_rules! env_params {
       #[derive(Debug, Clone)]
       pub struct $tt($inner);
 
-      // impl Deref for $tt {
-      //   type Target = $inner;
-      //   fn deref(&self) -> &Self::Target { &self.0 }
-      // }
-
       impl From<$tt> for $inner {
         fn from(value: $tt) -> $inner {
           value.0
@@ -82,5 +77,4 @@ env_default! {
 
 vars! {
   groups(GROUPS) -> Strings
-  // teachers(TEACHERS) -> Strings
 }

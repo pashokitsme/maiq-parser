@@ -7,11 +7,10 @@ use log::info;
 use maiq_shared::FetchUrl;
 
 pub use maiq_shared::*;
-pub use parser::parse;
-
+use parser::table;
+pub mod env;
 pub mod parser;
 pub mod replacer;
-pub mod env;
 
 #[derive(thiserror::Error, Debug)]
 pub enum ParserError {
@@ -37,9 +36,10 @@ impl From<ParseIntError> for ParserError {
   }
 }
 
-pub async fn fetch_snapshot<T: FetchUrl>(mode: &T) -> Result<Snapshot, ParserError> {
-  let raw = fetch(mode).await?;
-  parse(&raw, mode.date())
+pub async fn snapshot_from_remote<T: FetchUrl>(mode: &T) -> Result<Snapshot, ()> {
+  let raw = fetch(mode).await.unwrap();
+  let table = table::parse_html(&raw).unwrap();
+  parser::snapshot::parse_snapshot(table)
 }
 
 pub fn warmup_defaults() {

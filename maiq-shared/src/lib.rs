@@ -43,7 +43,7 @@ impl Uid for Group {
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Lesson {
-  pub num: u8,
+  pub num: String,
   pub name: String,
   #[serde(skip_serializing_if = "Option::is_none")]
   pub subgroup: Option<u8>,
@@ -61,7 +61,7 @@ impl Uid for Lesson {
     hasher.update(self.teacher.clone().unwrap_or_default().as_bytes());
     hasher.update(self.name.as_bytes());
     hasher.update(&num_as_bytes!(self.subgroup.unwrap_or(0), u8));
-    hasher.update(&num_as_bytes!(self.num, u8));
+    hasher.update(self.num.as_bytes());
     hasher.finalize_into((&mut res).into());
     res
   }

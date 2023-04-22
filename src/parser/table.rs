@@ -6,7 +6,7 @@ use std::{
 use tl::{NodeHandle, ParseError, Parser, ParserOptions};
 
 pub struct Table {
-  pub values: Vec<Vec<String>>,
+  pub rows: Vec<Vec<String>>,
   pub elapsed: Duration,
 }
 
@@ -22,7 +22,7 @@ pub fn parse_html(html: &str) -> Result<Table, ParseError> {
 
   let values = parse_table(table.get(parser).unwrap().inner_html(parser))?;
   let elapsed = now.elapsed();
-  Ok(Table { values, elapsed })
+  Ok(Table { rows: values, elapsed })
 }
 
 fn parse_table(html: Cow<str>) -> Result<Vec<Vec<String>>, ParseError> {
@@ -42,6 +42,7 @@ fn parse_table(html: Cow<str>) -> Result<Vec<Vec<String>>, ParseError> {
         .map(normalize)
         .collect::<Vec<String>>()
     })
+    .filter(|x| !x.iter().all(|x| x.is_empty()))
     .collect::<Vec<Vec<String>>>();
 
   Ok(table)

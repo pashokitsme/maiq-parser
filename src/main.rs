@@ -1,6 +1,6 @@
 #[cfg(feature = "cli")]
 mod cli {
-  use maiq_parser::{compare::distinct, fetch_snapshot, warmup_defaults, Fetch};
+  use maiq_parser::{compare::distinct, snapshot_from_remote, warmup_defaults, Fetch};
   use maiq_shared::{Group, Snapshot};
   use std::{env, fs, io::BufWriter, process::exit};
 
@@ -12,6 +12,7 @@ mod cli {
 
   pub async fn run() {
     dotenvy::dotenv().ok();
+    maiq_parser::env::init();
 
     let mut args = env::args().skip(1);
     let mut command = None;
@@ -40,15 +41,15 @@ mod cli {
     warmup_defaults();
 
     match command.unwrap() {
-      Command::Fetch(ref fetch) => match fetch_snapshot(fetch).await {
+      Command::Fetch(ref fetch) => match snapshot_from_remote(fetch).await {
         Ok(snapshot) => match target_group {
           Some(g) => display_group(snapshot, &g),
           None => print_snapshot(&snapshot),
         },
-        Err(err) => eprintln!("error -> {err}"),
+        Err(_) => (),
       },
       Command::Distinct => show_distinct().await,
-      Command::Dump(ref fetch) => do_dump(fetch).await,
+      Command::Dump(ref fetch) => dump(fetch).await,
     }
   }
 
@@ -74,19 +75,15 @@ mod cli {
   }
 
   async fn show_distinct() {
-    let today = fetch_snapshot(&Fetch::Today).await.ok();
-    let other = fetch_snapshot(&Fetch::Next).await.ok();
+    let today = snapshot_from_remote(&Fetch::Today).await.ok();
+    let other = snapshot_from_remote(&Fetch::Next).await.ok();
     for group in distinct(today.as_ref(), other.as_ref()) {
       print!("{} ", group);
     }
   }
 
-  async fn do_dump(fetch: &Fetch) {
-    let snapshot = fetch_snapshot(fetch).await;
-    if let Err(err) = snapshot {
-      println!("error -> {}", err);
-      return;
-    }
+  async fn dump(fetch: &Fetch) {
+    let snapshot = snapshot_from_remote(fetch).await;
     let snapshot = snapshot.unwrap();
     let file_name = format!("{}_{}.json", snapshot.date.format("%d-%m-%Y"), snapshot.uid);
     let file = fs::File::create(file_name).expect("unable to open file");
@@ -121,7 +118,7 @@ mod cli {
       print!("{} ", lesson.name);
 
       if let Some(classroom) = lesson.classroom.as_ref() {
-        print!("в {}", classroom);
+        print!("в {} ", classroom);
       }
 
       if let Some(teacher) = lesson.teacher.as_ref() {
@@ -135,13 +132,7 @@ mod cli {
 #[cfg(feature = "cli")]
 #[tokio::main]
 async fn main() {
-  // cli::run().await;
-  dotenvy::dotenv().ok();
-  maiq_parser::env::init();
-  use maiq_parser::{fetch, parser::table::parse_html, Fetch};
-  let html = fetch(&Fetch::Today).await.unwrap();
-  let table = parse_html(&html).expect("Parse table error");
-  _ = maiq_parser::parser::snapshot::parse_snapshot(table);
+  cli::run().await;
 }
 
 #[cfg(not(feature = "cli"))]
