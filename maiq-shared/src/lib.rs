@@ -2,6 +2,8 @@ pub mod compare;
 pub mod default;
 pub mod utils;
 
+use std::fmt::Display;
+
 use chrono::{DateTime, Datelike, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use sha2::{digest::Digest, Sha256};
@@ -13,6 +15,44 @@ pub trait Uid {
   }
 
   fn uid_bytes(&self) -> [u8; 32];
+}
+
+#[derive(Debug, Default, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize, Clone)]
+pub enum Num {
+  Actual(String),
+  Previous,
+  #[default]
+  None,
+}
+
+impl Num {
+  pub fn is_some(&self) -> bool {
+    matches!(self, Num::Actual(_))
+  }
+}
+
+impl Display for Num {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    match self {
+      Num::Actual(x) => f.write_str(&x),
+      Num::Previous => f.write_str("?"),
+      Num::None => f.write_str("Нет"),
+    }
+  }
+}
+
+impl Uid for Num {
+  fn uid_bytes(&self) -> [u8; 32] {
+    let mut hasher = Sha256::new();
+    let mut res = [0u8; 32];
+
+    match self {
+      Num::Actual(x) => hasher.update(&x),
+      _ => hasher.update([0]),
+    }
+    hasher.finalize_into((&mut res).into());
+    res
+  }
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -43,7 +83,7 @@ impl Uid for Group {
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Lesson {
-  pub num: String,
+  pub num: Num,
   pub name: String,
   #[serde(skip_serializing_if = "Option::is_none")]
   pub subgroup: Option<u8>,
@@ -61,7 +101,7 @@ impl Uid for Lesson {
     hasher.update(self.teacher.clone().unwrap_or_default().as_bytes());
     hasher.update(self.name.as_bytes());
     hasher.update(&num_as_bytes!(self.subgroup.unwrap_or(0), u8));
-    hasher.update(self.num.as_bytes());
+    hasher.update(self.num.uid_bytes());
     hasher.finalize_into((&mut res).into());
     res
   }

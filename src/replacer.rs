@@ -1,6 +1,6 @@
 use chrono::{DateTime, Datelike, Utc};
 use include_dir::{include_dir, Dir};
-use maiq_shared::{default::DefaultDay, utils::time, Lesson};
+use maiq_shared::{default::DefaultDay, utils::time, Lesson, Num};
 
 lazy_static! {
   pub static ref REPLECEMENTS: Vec<DefaultDay> = load_defaults();
@@ -13,7 +13,7 @@ pub fn replace_or_clone(num: u8, group_name: &str, lesson: &Lesson, date: DateTi
     "По расписанию" | "по расписанию" => replace(num, group_name, date).unwrap_or_else(|| lesson.clone()),
     _ => lesson.clone(),
   };
-  lesson.num = num.to_string();
+  lesson.num = Num::Actual(num.to_string());
   lesson
 }
 
@@ -33,7 +33,7 @@ pub fn replace(num: u8, group_name: &str, date: DateTime<Utc>) -> Option<Lesson>
     })
     .map(|l| {
       let l = l.clone();
-      Lesson { num: num.to_string(), name: l.name, subgroup: l.subgroup, teacher: l.teacher, classroom: l.classroom }
+      Lesson { num: Num::Actual(num.to_string()), name: l.name, subgroup: l.subgroup, teacher: l.teacher, classroom: l.classroom }
     })
 }
 

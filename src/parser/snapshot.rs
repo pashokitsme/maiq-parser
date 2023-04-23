@@ -2,21 +2,13 @@ use std::{iter::Peekable, slice::Iter};
 
 use chrono::{DateTime, Utc};
 use log::warn;
-use maiq_shared::{Group, Lesson, Snapshot};
+use maiq_shared::{Group, Lesson, Num, Snapshot};
 
 use crate::env;
 
 use super::{date, table::Table};
 
 type GroupCursor = Option<String>;
-
-#[derive(Debug, Clone, Default)]
-enum Num {
-  Actual(String),
-  Previous,
-  #[default]
-  None,
-}
 
 #[derive(Debug, Default)]
 struct RawLesson {
@@ -53,16 +45,17 @@ pub fn parse_snapshot(table: Table, fallback_date: DateTime<Utc>) -> anyhow::Res
   repair_nums(&mut lessons);
   assign_lessons_to_groups(lessons, &mut groups);
   groups.retain(|g| !g.lessons.is_empty());
-  groups
-    .iter_mut()
-    .for_each(|g| g.lessons.sort_by(|a, b| a.num.cmp(&b.num)));
+  groups.iter_mut().for_each(|g| {
+    g.lessons.sort_by_key(|g| g.subgroup);
+    g.lessons.sort_by(|a, b| a.num.cmp(&b.num));
+  });
 
   Ok(Snapshot::new(groups, date))
 }
 
 fn assign_lessons_to_groups(lessons: Vec<RawLesson>, groups: &mut [Group]) {
   for lesson in lessons.into_iter() {
-    if lesson.group_name.is_none() {
+    if lesson.group_name.is_none() || lesson.name.as_ref().map(|x| x == "Нет").unwrap_or(true) {
       continue;
     }
     let name = lesson.group_name.unwrap();
@@ -74,13 +67,16 @@ fn assign_lessons_to_groups(lessons: Vec<RawLesson>, groups: &mut [Group]) {
     let group = group.unwrap();
 
     let nums = match lesson.num {
-      Num::Actual(x) => x,
-      _ => "Нет".into(),
+      Num::Actual(x) => x
+        .split(',')
+        .map(|x| Num::Actual(x.trim().to_string()))
+        .collect::<Vec<Num>>(),
+      _ => vec![Num::None],
     };
 
-    for num in nums.split(',').map(|x| x.trim()) {
+    for num in nums {
       group.lessons.push(Lesson {
-        num: num.into(),
+        num,
         name: lesson.name.clone().unwrap_or("?".into()),
         subgroup: lesson.subgroup.clone().and_then(|x| x.parse().ok()),
         teacher: lesson.teacher.clone(),
