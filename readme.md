@@ -4,4 +4,8 @@
 # CLI
 Скачать [тут](https://github.com/pashokitsme/maiq-parser/releases)
 
-![](https://i.imgur.com/NAlenRF.png)![](https://i.imgur.com/tT2Mcxf.png)
+![](https://i.imgur.com/BB0hCGr.png)
+
+![](https://i.imgur.com/YzdVfum.png)
+
+![](https://i.imgur.com/j6yMz80.png)
