@@ -18,6 +18,7 @@ pub trait Uid {
 }
 
 #[derive(Debug, Default, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize, Clone)]
+#[serde(untagged)]
 pub enum Num {
   Actual(String),
   Previous,
@@ -26,8 +27,8 @@ pub enum Num {
 }
 
 impl Num {
-  pub fn is_some(&self) -> bool {
-    matches!(self, Num::Actual(_))
+  pub fn is_none(&self) -> bool {
+    !matches!(self, Num::Actual(_))
   }
 }
 
@@ -83,6 +84,7 @@ impl Uid for Group {
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Lesson {
+  #[serde(skip_serializing_if = "Num::is_none")]
   pub num: Num,
   pub name: String,
   #[serde(skip_serializing_if = "Option::is_none")]

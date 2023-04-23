@@ -6,7 +6,7 @@ use maiq_shared::{Group, Lesson, Num, Snapshot};
 
 use crate::env;
 
-use super::{date, table::Table};
+use super::{date, replace::replace_all, table::Table};
 
 type GroupCursor = Option<String>;
 
@@ -44,6 +44,7 @@ pub fn parse_snapshot(table: Table, fallback_date: DateTime<Utc>) -> anyhow::Res
     .collect::<Vec<RawLesson>>();
   repair_nums(&mut lessons);
   assign_lessons_to_groups(lessons, &mut groups);
+  replace_all(&mut groups, date);
   groups.retain(|g| !g.lessons.is_empty());
   groups.iter_mut().for_each(|g| {
     g.lessons.sort_by_key(|g| g.subgroup);
@@ -65,14 +66,7 @@ fn assign_lessons_to_groups(lessons: Vec<RawLesson>, groups: &mut [Group]) {
       continue;
     }
     let group = group.unwrap();
-
-    let nums = match lesson.num {
-      Num::Actual(x) => x
-        .split(',')
-        .map(|x| Num::Actual(x.trim().to_string()))
-        .collect::<Vec<Num>>(),
-      _ => vec![Num::None],
-    };
+    let nums = split_nums(lesson.num);
 
     for num in nums {
       group.lessons.push(Lesson {
@@ -140,6 +134,16 @@ fn __test_is_num() {
   assert!(is_num("1,2,3(1ч)"));
   assert!(!is_num("Информационные технологии, Иванов И.Л."));
   assert!(is_num(""));
+}
+
+fn split_nums(num: Num) -> Vec<Num> {
+  match num {
+    Num::Actual(x) => x
+      .split(',')
+      .map(|x| Num::Actual(x.trim().to_string()))
+      .collect::<Vec<Num>>(),
+    _ => vec![Num::None],
+  }
 }
 
 fn split_teacher(raw: Option<&str>) -> [Option<String>; 2] {

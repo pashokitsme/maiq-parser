@@ -8,7 +8,6 @@ pub use maiq_shared::*;
 use parser::table;
 pub mod env;
 pub mod parser;
-pub mod replacer;
 
 pub async fn snapshot_from_remote<T: FetchUrl>(mode: &T) -> anyhow::Result<Snapshot> {
   let raw = fetch(mode).await.unwrap();
@@ -17,7 +16,7 @@ pub async fn snapshot_from_remote<T: FetchUrl>(mode: &T) -> anyhow::Result<Snaps
 }
 
 pub fn warmup_defaults() {
-  let group_names = replacer::REPLECEMENTS
+  let group_names = parser::replace::REPLACEMENTS
     .iter()
     .map(|day| format!("{}: {}", day.day, day.groups.iter().map(|g| g.name.clone()).collect::<String>()))
     .collect::<Vec<String>>();
