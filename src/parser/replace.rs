@@ -8,7 +8,7 @@ lazy_static! {
 
 static DEFAULT_JSON_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/default/");
 
-pub fn replace_all(groups: &mut [Group], date: DateTime<Utc>) {
+pub fn replace_all_default(groups: &mut [Group], date: DateTime<Utc>) {
   groups.iter_mut().for_each(|g| {
     g.lessons
       .iter_mut()
@@ -27,11 +27,9 @@ pub fn try_replace(lesson: &mut Lesson, group_name: &str, date: DateTime<Utc>) {
   let is_even = time::is_week_even(&date);
   if let Some(l) = REPLACEMENTS.iter().find(|d| d.day == weekday).and_then(|d| {
     d.groups.iter().find(|g| g.name.as_str() == group_name).and_then(|g| {
-      g.lessons.iter().find(|l| {
-        match l.is_even {
-          Some(e) => l.num == lesson.num && e == is_even,
-          None => l.num == lesson.num,
-        }
+      g.lessons.iter().find(|l| match l.is_even {
+        Some(e) => l.num == lesson.num && e == is_even,
+        None => l.num == lesson.num,
       })
     })
   }) {

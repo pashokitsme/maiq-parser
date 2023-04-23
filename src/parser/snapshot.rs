@@ -1,12 +1,9 @@
+use chrono::{DateTime, Utc};
+use maiq_shared::{Group, Lesson, Num, Snapshot};
 use std::{iter::Peekable, slice::Iter};
 
-use chrono::{DateTime, Utc};
-use log::warn;
-use maiq_shared::{Group, Lesson, Num, Snapshot};
-
+use super::{date, replace::replace_all_default, table::Table};
 use crate::env;
-
-use super::{date, replace::replace_all, table::Table};
 
 type GroupCursor = Option<String>;
 
@@ -44,7 +41,7 @@ pub fn parse_snapshot(table: Table, fallback_date: DateTime<Utc>) -> anyhow::Res
     .collect::<Vec<RawLesson>>();
   repair_nums(&mut lessons);
   assign_lessons_to_groups(lessons, &mut groups);
-  replace_all(&mut groups, date);
+  replace_all_default(&mut groups, date);
   groups.retain(|g| !g.lessons.is_empty());
   groups.iter_mut().for_each(|g| {
     g.lessons.sort_by_key(|g| g.subgroup);
@@ -55,18 +52,13 @@ pub fn parse_snapshot(table: Table, fallback_date: DateTime<Utc>) -> anyhow::Res
 }
 
 fn assign_lessons_to_groups(lessons: Vec<RawLesson>, groups: &mut [Group]) {
-  for lesson in lessons.into_iter() {
-    if lesson.group_name.is_none() || lesson.name.as_ref().map(|x| x == "Нет").unwrap_or(true) {
-      continue;
-    }
+  for lesson in lessons
+    .into_iter()
+    .filter(|l| l.group_name.is_some() && !matches!(l.name.as_deref(), Some("Нет") | None))
+  {
     let name = lesson.group_name.unwrap();
-    let group = groups.iter_mut().find(|x| x.name == name);
-    if group.is_none() {
-      warn!("Attempt to add {name} to groups that doesn't exists");
-      continue;
-    }
-    let group = group.unwrap();
-    let nums = split_nums(lesson.num);
+    let group = groups.iter_mut().find(|x| x.name == name).unwrap();
+    let nums = expand_num(lesson.num);
 
     for num in nums {
       group.lessons.push(Lesson {
@@ -136,7 +128,7 @@ fn __test_is_num() {
   assert!(is_num(""));
 }
 
-fn split_nums(num: Num) -> Vec<Num> {
+fn expand_num(num: Num) -> Vec<Num> {
   match num {
     Num::Actual(x) => x
       .split(',')
