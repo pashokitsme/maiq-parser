@@ -1,6 +1,7 @@
 #[macro_use]
 extern crate lazy_static;
 
+use chrono::Weekday;
 use log::info;
 use maiq_shared::FetchUrl;
 
@@ -13,6 +14,13 @@ pub async fn snapshot_from_remote<T: FetchUrl>(mode: &T) -> anyhow::Result<Snaps
   let raw = fetch(mode).await.unwrap();
   let table = table::parse_html(&raw).unwrap();
   parser::snapshot::parse_snapshot(table, mode.date())
+}
+
+pub fn default_for(weekday: Weekday, group_name: &str) -> Option<&default::DefaultGroup> {
+  parser::replace::REPLACEMENTS
+    .iter()
+    .find(|d| d.day == weekday)
+    .and_then(|d| d.groups.iter().find(|g| g.name == group_name))
 }
 
 pub fn warmup_defaults() {
