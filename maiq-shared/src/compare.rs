@@ -4,8 +4,8 @@ use crate::Snapshot;
 
 lazy_static::lazy_static! {
   static ref GROUPS: Vec<String> = env::var("GROUPS").unwrap()
-      .split_whitespace()
-      .map(|s| s.to_owned())
+      .split(';')
+      .map(|s| s.trim().to_owned())
       .collect::<Vec<String>>();
 }
 
