@@ -25,7 +25,7 @@ pub fn try_replace_if_need(group_name: &str, lesson: &mut Lesson, date: DateTime
 pub fn try_replace(lesson: &mut Lesson, group_name: &str, date: DateTime<Utc>) {
   let weekday = date.weekday();
   let is_even = time::is_week_even(&date);
-  if let Some(l) = REPLACEMENTS.iter().find(|d| d.day == weekday).and_then(|d| {
+  if let Some(default) = REPLACEMENTS.iter().find(|d| d.day == weekday).and_then(|d| {
     d.groups.iter().find(|g| g.name.as_str() == group_name).and_then(|g| {
       g.lessons.iter().find(|l| match l.is_even {
         Some(e) => l.num == lesson.num && e == is_even,
@@ -35,10 +35,14 @@ pub fn try_replace(lesson: &mut Lesson, group_name: &str, date: DateTime<Utc>) {
   }) {
     *lesson = Lesson {
       num: lesson.num.clone(),
-      name: l.name.clone(),
-      subgroup: l.subgroup,
-      teacher: l.teacher.clone(),
-      classroom: l.classroom.clone(),
+      name: default.name.clone(),
+      subgroup: default.subgroup,
+      teacher: default.teacher.clone(),
+      classroom: lesson.classroom.clone(),
+    };
+
+    if lesson.classroom.is_none() {
+      lesson.classroom = default.classroom.clone();
     }
   }
 }

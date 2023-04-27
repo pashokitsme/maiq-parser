@@ -17,7 +17,7 @@ pub fn parse_html(html: &str) -> anyhow::Result<Table> {
   let parser = dom.parser();
   let table = dom
     .query_selector("table")
-    .ok_or_else(|| anyhow!("Unable to select `table"))?
+    .ok_or_else(|| anyhow!("Unable to select table"))?
     .last()
     .ok_or_else(|| anyhow!("Unable to select table"))?;
 
