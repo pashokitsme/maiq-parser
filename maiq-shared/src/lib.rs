@@ -85,6 +85,7 @@ impl Uid for Group {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Lesson {
   #[serde(skip_serializing_if = "Num::is_none")]
+  #[serde(default)]
   pub num: Num,
   pub name: String,
   #[serde(skip_serializing_if = "Option::is_none")]
