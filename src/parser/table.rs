@@ -19,7 +19,6 @@ pub fn parse_html(html: &str) -> anyhow::Result<Table> {
     .query_selector("table")
     .ok_or_else(|| anyhow!("Unable to select `table"))?
     .last()
-    // .unwrap();
     .ok_or_else(|| anyhow!("Unable to select table"))?;
 
   let values = parse_table(table.get(parser).unwrap().inner_html(parser))?;
@@ -61,7 +60,7 @@ fn get_inner_text(parser: &Parser, node: &NodeHandle) -> Option<String> {
 }
 
 fn normalize(text: String) -> String {
-  let text = text.as_str().replace("&nbsp;", " ");
+  let text = text.as_str().replace("&nbsp;", " ").replace("&quot;", "\"");
   let mut chars = text.chars().peekable();
   let mut whitespaces_only = true;
   let mut res = String::new();
