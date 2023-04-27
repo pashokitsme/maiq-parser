@@ -11,8 +11,8 @@ pub mod env;
 pub mod parser;
 
 pub async fn snapshot_from_remote<T: FetchUrl>(mode: &T) -> anyhow::Result<Snapshot> {
-  let raw = fetch(mode).await.unwrap();
-  let table = table::parse_html(&raw).unwrap();
+  let raw = fetch(mode).await?;
+  let table = table::parse_html(&raw)?;
   parser::snapshot::parse_snapshot(table, mode.date())
 }
 

@@ -17,9 +17,10 @@ pub fn parse_html(html: &str) -> anyhow::Result<Table> {
   let parser = dom.parser();
   let table = dom
     .query_selector("table")
-    .ok_or_else(|| anyhow!("Unable to perform selection for `table`"))?
+    .ok_or_else(|| anyhow!("Unable to select `table"))?
     .last()
-    .unwrap();
+    // .unwrap();
+    .ok_or_else(|| anyhow!("Unable to select table"))?;
 
   let values = parse_table(table.get(parser).unwrap().inner_html(parser))?;
   let elapsed = now.elapsed();
