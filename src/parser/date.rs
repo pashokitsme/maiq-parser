@@ -1,4 +1,6 @@
-use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, Utc};
+use chrono::{DateTime, Datelike, Utc};
+use maiq_shared::utils::time::now_date;
+
 const MONTHS: [&str; 12] =
   ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"];
 
@@ -24,19 +26,7 @@ pub fn parse_date<T: Iterator<Item = Vec<String>>>(row: &mut T) -> Option<DateTi
       None => continue,
     };
 
-    let year = match split.next() {
-      None => continue,
-      Some(year) => {
-        let y = &year.trim()[..4];
-        match y.parse::<i32>() {
-          Ok(y) => y,
-          Err(_) => continue,
-        }
-      }
-    };
-
-    let date = NaiveDate::from_ymd_opt(year, month, day).unwrap();
-    return Some(DateTime::from_utc(NaiveDateTime::new(date, NaiveTime::default()), Utc));
+    return now_date().with_day(day).unwrap().with_month(month);
   }
 
   None
