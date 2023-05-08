@@ -6,13 +6,12 @@ use log::info;
 use maiq_shared::FetchUrl;
 
 pub use maiq_shared::*;
-use parser::table;
 pub mod env;
 pub mod parser;
 
 pub async fn snapshot_from_remote<T: FetchUrl>(mode: &T) -> anyhow::Result<Snapshot> {
   let raw = fetch(mode).await?;
-  let table = table::parse_html(&raw)?;
+  let table = tl_table_parser::parse_last(&raw).ok_or_else(|| anyhow::anyhow!("Unable to parse table"))?;
   parser::snapshot::parse_snapshot(table, mode.date())
 }
 

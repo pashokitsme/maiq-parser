@@ -25,6 +25,7 @@ cli = ["tokio", "colored"]
 maiq-shared = { path = "maiq-shared/" }
 reqwest = { version = "0.11.13" }
 tl = { version = "0.7.7" }
+tl_table_parser = { git = "https://github.com/pashokitsme/tl-table-parser", version = "0.1.0" }
 
 chrono = { version = "0.4.23", features = ["serde"] }
 dotenvy = "0.15.6"

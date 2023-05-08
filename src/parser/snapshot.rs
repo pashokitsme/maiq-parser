@@ -2,8 +2,9 @@ use chrono::{DateTime, Utc};
 use maiq_shared::{Group, Lesson, Num, Snapshot};
 use std::{iter::Peekable, slice::Iter};
 
-use super::{date, replace::replace_all_default, table::Table};
+use super::{date, replace::replace_all_default};
 use crate::env;
+use tl_table_parser::Table;
 
 type GroupCursor = Option<String>;
 
