@@ -7,5 +7,6 @@ edition = "2021"
 [dependencies]
 chrono = { version = "0.4.23", features = ["serde"] }
 lazy_static = "1.4.0"
+log = "0.4.17"
 serde = "1.0.152"
 sha2 = "0.10.6"

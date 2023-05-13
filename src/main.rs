@@ -14,6 +14,7 @@ mod cli {
   pub async fn run() {
     dotenvy::dotenv().ok();
     maiq_parser::env::init();
+    pretty_env_logger::init();
 
     let mut args = env::args().skip(1);
     let mut command = None;
