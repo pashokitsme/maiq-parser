@@ -121,6 +121,7 @@ fn is_num(raw: &str) -> bool {
   raw.chars().all(|c| SKIP.contains(&c) || c.is_numeric())
 }
 
+#[cfg(test)]
 #[test]
 fn __test_is_num() {
   assert!(is_num("1,2,3"));

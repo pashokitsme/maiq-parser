@@ -10,10 +10,7 @@ use sha2::{digest::Digest, Sha256};
 use utils::{bytes_as_str, time};
 
 pub trait Uid {
-  fn uid(&self) -> String {
-    bytes_as_str(&self.uid_bytes())
-  }
-
+  fn refresh(&mut self);
   fn uid_bytes(&self) -> [u8; 32];
 }
 
@@ -54,6 +51,8 @@ impl Uid for Num {
     hasher.finalize_into((&mut res).into());
     res
   }
+
+  fn refresh(&mut self) {}
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -65,9 +64,7 @@ pub struct Group {
 
 impl Group {
   pub fn new(name: String) -> Self {
-    let mut g = Self { uid: String::with_capacity(10), name, lessons: vec![] };
-    g.uid = g.uid();
-    g
+    Self { uid: "EMPTY".into(), name, lessons: vec![] }
   }
 }
 
@@ -79,6 +76,10 @@ impl Uid for Group {
     self.lessons.iter().for_each(|l| hasher.update(l.uid_bytes()));
     hasher.finalize_into((&mut res).into());
     res
+  }
+
+  fn refresh(&mut self) {
+    self.uid = bytes_as_str(&self.uid_bytes());
   }
 }
 
@@ -97,7 +98,7 @@ pub struct Lesson {
 }
 
 impl Uid for Lesson {
-  fn uid_bytes<'a>(&'a self) -> [u8; 32] {
+  fn uid_bytes(&self) -> [u8; 32] {
     let mut hasher = Sha256::new();
     let mut res = [0u8; 32];
     hasher.update(self.classroom.clone().unwrap_or_default().as_bytes());
@@ -108,6 +109,8 @@ impl Uid for Lesson {
     hasher.finalize_into((&mut res).into());
     res
   }
+
+  fn refresh(&mut self) {}
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -121,9 +124,9 @@ pub struct Snapshot {
 impl Snapshot {
   pub fn new(groups: Vec<Group>, date: DateTime<Utc>) -> Self {
     let now = chrono::Utc::now() + Duration::hours(3);
-    let mut s = Self { date, uid: String::with_capacity(10), groups, parsed_date: now };
-    s.uid = s.uid();
-    s
+    let mut snapshot = Self { date, uid: "".into(), groups, parsed_date: now };
+    snapshot.refresh();
+    snapshot
   }
 
   pub fn group(&self, name: &str) -> Option<&Group> {
@@ -160,6 +163,11 @@ impl Uid for Snapshot {
     self.groups.iter().for_each(|g| hasher.update(&g.uid_bytes()));
     hasher.finalize_into((&mut res).into());
     res
+  }
+
+  fn refresh(&mut self) {
+    self.groups.iter_mut().for_each(|g| g.refresh());
+    self.uid = bytes_as_str(&self.uid_bytes());
   }
 }
 

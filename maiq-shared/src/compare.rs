@@ -53,3 +53,25 @@ pub fn distinct(previous: Option<&Snapshot>, new: Option<&Snapshot>) -> Vec<Stri
   changes.retain(is_updated);
   changes
 }
+
+#[cfg(test)]
+mod tests {
+  use crate::{compare::distinct, utils::time::now, Group, Lesson, Num, Snapshot, Uid};
+
+  #[test]
+  fn different_group_lessons() {
+    let lesson = Lesson { num: Num::Actual("1".into()), name: "123".into(), subgroup: None, teacher: None, classroom: None };
+    let mut group = Group::new("Group".into());
+    group.lessons = vec![lesson.clone()];
+    let mut snapshot_1 = Snapshot::new(vec![group.clone()], now());
+
+    group.lessons = vec![Lesson { name: "3333".into(), ..lesson }];
+
+    let mut snapshot_2 = Snapshot::new(vec![group], now());
+
+    println!("{:?}", snapshot_1);
+    snapshot_1.refresh();
+    snapshot_2.refresh();
+    assert_eq!(vec!["Group".to_string()], distinct(Some(&snapshot_1), Some(&snapshot_2)))
+  }
+}
