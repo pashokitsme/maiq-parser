@@ -55,7 +55,7 @@ pub fn parse_snapshot(table: Table, fallback_date: DateTime<Utc>) -> anyhow::Res
 fn assign_lessons_to_groups(lessons: Vec<RawLesson>, groups: &mut [Group]) {
   for lesson in lessons
     .into_iter()
-    .filter(|l| l.group_name.is_some() && !matches!(l.name.as_deref(), Some("Нет") | None))
+    .filter(|l| l.group_name.is_some() && !matches!(l.name.as_deref(), None | Some("Нет") | Some("нет")))
   {
     let name = lesson.group_name.unwrap();
     let group = groups.iter_mut().find(|x| x.name == name).unwrap();
